@@ -1,30 +1,30 @@
 version: "3.7"
 
 services:
-    backend:
-        build:
-            context: ./backend
-        volumes:
-            - ./backend:/app
-            - /app/__pycache__
-        env_file:
-            - .env
-        ports:
-            - "8000:8000"
-        depends_on:
-            - db
+    # backend:
+    #     build:
+    #         context: ./backend
+    #     volumes:
+    #         - ./backend:/app
+    #         - /app/__pycache__
+    #     env_file:
+    #         - .env
+    #     ports:
+    #         - "8000:8000"
+    #     depends_on:
+    #         - db
 
-    frontend:
-        build:
-            context: ./frontend
-        volumes:
-            - ./frontend/src:/app/src
-            - /app/node_modules
-        environment:
-            - WATCHPACK_POLLING=true
-        ports:
-            - "3000:3000"
-            - "3010:3010"
+    # frontend:
+    #     build:
+    #         context: ./frontend
+    #     volumes:
+    #         - ./frontend/src:/app/src
+    #         - /app/node_modules
+    #     environment:
+    #         - WATCHPACK_POLLING=true
+    #     ports:
+    #         - "3000:3000"
+    #         - "3010:3010"
     db:
         container_name: pg_container
         image: postgres
