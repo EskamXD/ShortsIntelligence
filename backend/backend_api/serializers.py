@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import Video
+from .models import Video, Project
 
 
 # Create your serializers here.
@@ -9,4 +9,10 @@ from .models import Video
 class VideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
-        fields = ["id", "title", "description", "file", "created_at"]
+        fields = "__all__"
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = "__all__"

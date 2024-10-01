@@ -1,15 +1,16 @@
 # urls.py
-from django.urls import path
-from .views import VideoListCreate
+from django.urls import path, include
+from .views import VideoViewSet, ProjectViewSet
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 
+router.register(r"videos", VideoViewSet)
+router.register(r"projects", ProjectViewSet)
 
 urlpatterns = [
-    path("videos/", VideoListCreate.as_view(), name="video-list-create"),
-    # path("videos/<int:pk>/", VideoListCreate.as_view(), name="video-detail"),
+    path("", include(router.urls)),
     # path to swagger
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

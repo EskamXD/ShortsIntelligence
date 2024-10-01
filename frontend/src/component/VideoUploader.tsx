@@ -1,6 +1,7 @@
 // VideoUploader.tsx
 import React, { useState, useEffect } from "react";
 import { getVideos, postVideos } from "../api/apiService";
+import { Container, Row, Col } from "react-bootstrap";
 
 interface Video {
     id: number;
@@ -50,7 +51,7 @@ const VideoUploader: React.FC = () => {
     };
 
     return (
-        <div>
+        <Col>
             <h1>Video Uploader</h1>
             <form onSubmit={handleSubmit}>
                 <div>
@@ -100,7 +101,7 @@ const VideoUploader: React.FC = () => {
                     </li>
                 ))}
             </ul>
-        </div>
+        </Col>
     );
 };
 

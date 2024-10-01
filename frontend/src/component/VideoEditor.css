@@ -1,0 +1,84 @@
+/* VideoEditor.css */
+#root {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    width: 100vw;
+    max-width: 100vw;
+}
+
+.video-editor {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 4rem);
+    width: 10vw;
+    /* padding: 20px; */
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+}
+
+.editor-top {
+    display: flex;
+    justify-content: space-between;
+    /* margin-bottom: 20px; */
+    height: 50%;
+    flex: 1;
+}
+
+.effects-panel,
+.preview-panel {
+    border: 1px solid #ccc;
+    padding: 10px;
+    height: 100%;
+    flex-grow: 1;
+}
+
+.preview-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 70%;
+}
+
+.editor-bottom {
+    display: flex;
+    justify-content: space-between;
+    flex: 1;
+    max-height: 35%;
+}
+
+.file-tools-panel,
+.timeline-panel {
+    border: 1px solid #ccc;
+    padding: 10px;
+    height: 100%;
+    flex-grow: 1;
+}
+
+.timeline-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 70%;
+}
+
+.timeline {
+    border: 1px dashed #ccc;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+}
+
+.timeline-item {
+    /* position: absolute; */
+    margin: 5px;
+    width: 100%;
+    background-color: rgba(0, 123, 255, 0.1);
+    border-radius: 4px;
+    padding: 5px;
+    height: 50px;
+}
