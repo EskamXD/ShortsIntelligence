@@ -20,18 +20,32 @@
 
 .editor-top {
     display: flex;
+    flex-direction: row;
     justify-content: space-between;
     /* margin-bottom: 20px; */
-    height: 50%;
+    max-height: calc(60vh - 4rem);
     flex: 1;
 }
 
-.effects-panel,
+.panel,
 .preview-panel {
-    border: 1px solid #ccc;
-    padding: 10px;
+    border: 1px solid #555;
+    /* padding: 10px; */
     height: 100%;
     flex-grow: 1;
+}
+
+.effects-panel,
+.audio-panel,
+.subtitles-panel {
+    padding: 2rem;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: calc(40vw - 4rem);
 }
 
 .preview-panel {
@@ -39,29 +53,71 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 70%;
+    width: calc(60vw - 4rem);
 }
 
 .editor-bottom {
     display: flex;
+    flex-direction: row;
     justify-content: space-between;
     flex: 1;
-    max-height: 35%;
+    max-height: calc(45vh - 4rem);
 }
 
 .file-tools-panel,
 .timeline-panel {
-    border: 1px solid #ccc;
+    border: 1px solid #555;
     padding: 10px;
     height: 100%;
     flex-grow: 1;
+}
+
+.file-tools-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: calc(40vw - 4rem);
+}
+
+.file-tools-panel > .list-group {
+    flex-grow: 1;
+    overflow-y: auto;
+    border: 1px solid #666;
+    background-color: #171a1d;
+    margin-bottom: 0.75rem;
+}
+
+.add-file-button {
+    padding: 0.3em 0.6em;
+    border-radius: 6px;
+    background-color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.delete-file-button {
+    padding: 0.3em 0.6em;
+    border-radius: 6px;
+    background-color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: border-color 0.25s;
+}
+.delete-file-button:hover {
+    border-color: #646cff;
 }
 
 .timeline-panel {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    width: 70%;
+    width: calc(60vw - 4rem);
 }
 
 .timeline {
@@ -81,4 +137,18 @@
     border-radius: 4px;
     padding: 5px;
     height: 50px;
+}
+
+.timeline-track {
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    padding: 10px;
+    min-height: 50px;
+    /* margin-top: 10px; */
+    position: relative;
+    width: 3000px;
+}
+
+.highlight {
+    background-color: rgba(0, 123, 255, 0.1);
 }
