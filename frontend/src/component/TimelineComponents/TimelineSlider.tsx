@@ -1,44 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 interface TimelineSliderProps {
-    timelineOffset: number;
-    handleTimeLineScroll: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    playbackPosition: number; // Pozycja odtwarzania w sekundach
+    onSliderChange: (newPosition: number) => void; // Funkcja do zmiany pozycji odtwarzania
+    timelineLength: number; // Długość timeline'a w sekundach
+    pixelsPerSecond: number; // Piksele na sekundę
 }
 
 const TimelineSlider: React.FC<TimelineSliderProps> = ({
-    timelineOffset,
-    handleTimeLineScroll,
+    playbackPosition,
+    onSliderChange,
+    timelineLength,
 }) => {
-    const [maxValue, setMaxValue] = useState(2400); // Wartość początkowa
-
-    // Funkcja do przeliczania `60vw` i `4rem`
-    const calculateMaxValue = () => {
-        const viewportWidth = window.innerWidth; // Pobierz szerokość okna przeglądarki
-        const remInPx = parseFloat(
-            getComputedStyle(document.documentElement).fontSize
-        ); // Pobierz rozmiar `rem` w pikselach
-        const max = 3000 - (0.6 * viewportWidth - 4 * remInPx); // Oblicz nową wartość maksymalną
-        setMaxValue(max); // Ustawienie wartości max
+    // Funkcja obsługująca zmianę wskaźnika odtwarzania
+    const handleSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const newPosition = parseFloat(event.target.value);
+        onSliderChange(newPosition); // Wywołujemy funkcję, która aktualizuje playbackPosition
     };
-
-    // Przelicz wartości, gdy komponent się montuje oraz gdy zmienia się rozmiar okna
-    useEffect(() => {
-        calculateMaxValue();
-        window.addEventListener("resize", calculateMaxValue); // Przeliczaj przy zmianie rozmiaru okna
-
-        return () => {
-            window.removeEventListener("resize", calculateMaxValue);
-        };
-    }, []);
 
     return (
         <input
             type="range"
             min="0"
-            max={maxValue} // Dynamicznie obliczona wartość maksymalna
-            value={timelineOffset}
-            onChange={handleTimeLineScroll}
+            max={timelineLength}
+            value={playbackPosition} // Używamy playbackPosition jako wartości slidera
+            step={0.1} // Slider operuje na sekundach z precyzją do 0.1
             style={{ width: "100%" }}
+            onChange={handleSliderChange} // Wywołujemy handleSliderChange przy przesunięciu slidera
         />
     );
 };

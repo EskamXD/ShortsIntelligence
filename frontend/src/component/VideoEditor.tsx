@@ -138,7 +138,7 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ projectId, onClose }) => {
                 />
 
                 {/* Oś czasu */}
-                <TimelinePanel files={files} subtitles={subtitles} />
+                <TimelinePanel files={files} subtitles={subtitles} fps={30} />
             </div>
         </div>
     );
