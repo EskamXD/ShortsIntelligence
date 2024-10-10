@@ -162,7 +162,10 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({
     }
 
     return (
-        <div style={{ position: "relative" }}>
+        <div
+            style={{
+                position: "relative",
+            }}>
             {/* Wyświetlanie aktualnego czasu odtwarzania w lewym górnym rogu */}
             <div
                 style={{
@@ -305,3 +308,4 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({
 };
 
 export default TimelinePanel;
+

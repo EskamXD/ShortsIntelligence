@@ -65,7 +65,12 @@ const App: React.FC = () => {
     };
 
     return (
-        <div style={{ display: "flex" }}>
+        <div
+            style={{
+                display: "flex",
+                userSelect: "none",
+                WebkitUserSelect: "none",
+            }}>
             {!isEditorOn ? (
                 <>
                     <div
