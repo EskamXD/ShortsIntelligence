@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import EffectsPanel from "./EditorComponents/EffectsPanel";
 import PreviewPanel from "./EditorComponents/PreviewPanel";
 import FileToolsPanel from "./EditorComponents/FileToolsPanel";
@@ -18,6 +18,8 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ projectId, onClose }) => {
     const [videoURL, setVideoURL] = useState<string | null>(null);
     const [effects, setEffects] = useState<string[]>([]);
     const [subtitles, setSubtitles] = useState<string>("");
+    const [playbackPosition, setPlaybackPosition] = useState<number>(0); // Nowy stan dla pozycji odtwarzania
+    const [isPlaying, setIsPlaying] = useState<boolean>(false); // Nowy stan dla odtwarzania
 
     // Obsługa zmiany pliku (zarówno dla wideo, jak i audio)
     const handleFileChange = (file: File) => {
@@ -59,14 +61,14 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ projectId, onClose }) => {
         setEffects((prevEffects) => [...prevEffects, effect]);
     };
 
-    // Obsługa dodawania napisów
-    const handleSubtitlesChange = (newSubtitles: string) => {
-        setSubtitles(newSubtitles);
-    };
-
     // Funkcja do usunięcia efektu
     const handleRemoveEffect = (effect: string) => {
         setEffects((prevEffects) => prevEffects.filter((e) => e !== effect));
+    };
+
+    // Obsługa dodawania napisów
+    const handleSubtitlesChange = (newSubtitles: string) => {
+        setSubtitles(newSubtitles);
     };
 
     return (
@@ -127,7 +129,13 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ projectId, onClose }) => {
                     </Tab.Container>
                 </div>
                 {/* Podgląd wideo */}
-                <PreviewPanel videoURL={videoURL} effects={effects} />
+                <PreviewPanel
+                    videoURL={videoURL}
+                    playbackPosition={playbackPosition}
+                    setPlaybackPosition={setPlaybackPosition}
+                    isPlaying={isPlaying}
+                    setIsPlaying={setIsPlaying}
+                />
             </div>
             <div className="editor-bottom">
                 {/* Panel plików */}
@@ -138,7 +146,15 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ projectId, onClose }) => {
                 />
 
                 {/* Oś czasu */}
-                <TimelinePanel files={files} subtitles={subtitles} fps={30} />
+                <TimelinePanel
+                    files={files}
+                    subtitles={subtitles}
+                    fps={30}
+                    playbackPosition={playbackPosition}
+                    setPlaybackPosition={setPlaybackPosition}
+                    isPlaying={isPlaying}
+                    setIsPlaying={setIsPlaying}
+                />
             </div>
         </div>
     );

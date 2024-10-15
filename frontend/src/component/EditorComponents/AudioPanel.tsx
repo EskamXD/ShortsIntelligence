@@ -2,11 +2,11 @@ import React from "react";
 import { Form, Button } from "react-bootstrap";
 
 interface AudioPanelProps {
-    audioFiles: File[];
+    files: File[];
     onAddAudio: (file: File) => void;
 }
 
-const AudioPanel: React.FC<AudioPanelProps> = ({ audioFiles, onAddAudio }) => {
+const AudioPanel: React.FC<AudioPanelProps> = ({ files, onAddAudio }) => {
     const handleAudioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             onAddAudio(event.target.files[0]);

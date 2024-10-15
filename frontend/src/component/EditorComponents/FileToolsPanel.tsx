@@ -18,16 +18,23 @@ const FileToolsPanel: React.FC<FileToolsPanelProps> = ({
 
     useEffect(() => {
         const handleFileChange = (newFiles: File[]) => {
-            console.log("Adding new files:", newFiles);
-            if (newFiles.length > 0) {
-                newFiles.forEach((file) => {
-                    setFileList((prevFiles) => [...prevFiles, file]);
-                });
+            // Sprawdzamy, czy plik jest nowy, porównując nazwy plików
+            const updatedFileList = newFiles.filter(
+                (newFile) =>
+                    !fileList.some((file) => file.name === newFile.name)
+            );
+
+            if (updatedFileList.length > 0) {
+                console.log("Adding new files:", updatedFileList);
+                setFileList((prevFiles) => [...prevFiles, ...updatedFileList]);
             }
         };
 
-        handleFileChange(files);
-    }, [onFileChange, files]);
+        // Wywołujemy handleFileChange tylko wtedy, gdy pliki się zmieniły
+        if (files.length > 0) {
+            handleFileChange(files);
+        }
+    }, [files, fileList]); // Sprawdzamy, czy pliki się zmieniły
 
     const handleRemoveFile = (fileName: string) => {
         console.log("Removing file:", fileName);
@@ -38,11 +45,12 @@ const FileToolsPanel: React.FC<FileToolsPanelProps> = ({
     };
 
     const handleFileDragStart = (
-        event: React.DragEvent<HTMLDivElement>,
+        event: React.DragEvent<HTMLElement>,
         file: File
     ) => {
-        // Przekazujemy nazwę pliku
-        event.dataTransfer.setData("fileInfo", file.name);
+        // Zapisujemy dane pliku jako string w dataTransfer
+        event.dataTransfer.setData("text/plain", file.name);
+        console.log("Dragging file:", file);
     };
 
     const handleDragOver = (event: React.DragEvent<any>) => {
@@ -51,8 +59,8 @@ const FileToolsPanel: React.FC<FileToolsPanelProps> = ({
 
     const handleDrop = (event: React.DragEvent<any>) => {
         event.preventDefault();
-        const fileName = event.dataTransfer.getData("fileInfo"); // Pobranie nazwy pliku
-        const fileInfo = JSON.parse(fileName); // Parsowanie danych pliku
+        const fileData = event.dataTransfer.getData("file"); // Pobranie danych pliku
+        const fileInfo = JSON.parse(fileData); // Parsowanie danych pliku
         handleRemoveFile(fileInfo.name); // Usunięcie pliku na podstawie jego nazwy
     };
 
