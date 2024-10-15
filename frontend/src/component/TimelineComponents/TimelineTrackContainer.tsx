@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import TimelineTrack from "../TimelineComponents/TimelineTrack";
+import { useEditorContext } from "../../context/EditorContext";
 
 interface TimelineTrackContainerProps {
     videoTrack: { name: string; duration: number }[];
@@ -14,16 +15,10 @@ interface TimelineTrackContainerProps {
 const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
     videoTrack,
     audioTrack,
-    zoom,
     pixelsPerSecond,
-    files,
     scrollLeft,
-    timelinePanelWidth,
 }) => {
-    // useEffect(() => {
-    //     console.log("Scroll left:", scrollLeft);
-    // }, [scrollLeft]);
-
+    const { zoom } = useEditorContext();
     return (
         <div
             className="d-flex flex-column"
@@ -31,20 +26,14 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
             <TimelineTrack
                 trackType="video"
                 trackItems={videoTrack}
-                zoom={zoom}
                 pixelsPerSecond={pixelsPerSecond}
-                files={files}
                 scrollLeft={Number(scrollLeft)}
-                timelinePanelWidth={timelinePanelWidth}
             />
             <TimelineTrack
                 trackType="audio"
                 trackItems={audioTrack}
-                zoom={zoom}
                 pixelsPerSecond={pixelsPerSecond}
-                files={files}
                 scrollLeft={Number(scrollLeft)}
-                timelinePanelWidth={timelinePanelWidth}
             />
         </div>
     );

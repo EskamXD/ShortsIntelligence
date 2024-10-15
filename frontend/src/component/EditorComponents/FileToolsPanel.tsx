@@ -1,94 +1,57 @@
-import React, { useEffect, useState } from "react";
-import { ListGroup } from "react-bootstrap";
-import DeleteIcon from "@mui/icons-material/Delete";
+import React from "react";
+import { ListGroup, Button } from "react-bootstrap";
+import { useFileManagement } from "../../hooks/useFileManagement";
 import FileInputButton from "./FileInputButton";
+import DeleteIcon from "@mui/icons-material/Delete";
+import "./FileToolsPanel.css";
 
-interface FileToolsPanelProps {
-    onFileChange: (file: File) => void; // Funkcja do obsługi zmiany pliku
-    files: File[]; // Aktualnie wybrane pliki
-    setFiles: (files: File[]) => void;
-}
+const FileToolsPanel: React.FC = () => {
+    const { files, addFile, removeFile, inputKey } = useFileManagement();
 
-const FileToolsPanel: React.FC<FileToolsPanelProps> = ({
-    onFileChange,
-    files,
-    setFiles,
-}) => {
-    const [fileList, setFileList] = useState<File[]>([]);
-
-    useEffect(() => {
-        const handleFileChange = (newFiles: File[]) => {
-            // Sprawdzamy, czy plik jest nowy, porównując nazwy plików
-            const updatedFileList = newFiles.filter(
-                (newFile) =>
-                    !fileList.some((file) => file.name === newFile.name)
-            );
-
-            if (updatedFileList.length > 0) {
-                console.log("Adding new files:", updatedFileList);
-                setFileList((prevFiles) => [...prevFiles, ...updatedFileList]);
-            }
-        };
-
-        // Wywołujemy handleFileChange tylko wtedy, gdy pliki się zmieniły
-        if (files.length > 0) {
-            handleFileChange(files);
-        }
-    }, [files, fileList]); // Sprawdzamy, czy pliki się zmieniły
-
-    const handleRemoveFile = (fileName: string) => {
-        console.log("Removing file:", fileName);
-        const updatedFiles = fileList.filter((file) => file.name !== fileName);
-        console.log("Updated files:", updatedFiles);
-        setFileList(updatedFiles);
-        setFiles(updatedFiles);
-    };
-
-    const handleFileDragStart = (
-        event: React.DragEvent<HTMLElement>,
-        file: File
-    ) => {
-        // Zapisujemy dane pliku jako string w dataTransfer
+    const handleDragStart = (event: React.DragEvent, file: File) => {
         event.dataTransfer.setData("text/plain", file.name);
-        console.log("Dragging file:", file);
+        console.log("Rozpoczęto przeciąganie pliku:", file.name);
     };
 
-    const handleDragOver = (event: React.DragEvent<any>) => {
-        event.preventDefault(); // Aby obsłużyć upuszczanie, musimy zapobiec domyślnemu zachowaniu przeglądarki
-    };
-
-    const handleDrop = (event: React.DragEvent<any>) => {
+    const handleDropOnDelete = (event: React.DragEvent) => {
         event.preventDefault();
-        const fileData = event.dataTransfer.getData("file"); // Pobranie danych pliku
-        const fileInfo = JSON.parse(fileData); // Parsowanie danych pliku
-        handleRemoveFile(fileInfo.name); // Usunięcie pliku na podstawie jego nazwy
+        // Pobieramy nazwę pliku z dataTransfer
+        const fileName = event.dataTransfer.getData("text/plain");
+        if (fileName) {
+            console.log("Upuszczono plik do usunięcia:", fileName);
+            removeFile(fileName); // Usuwamy plik
+        }
     };
 
     return (
         <div className="file-tools-panel">
             <h5>Files</h5>
 
+            {/* Lista plików */}
             <ListGroup>
-                {fileList.map((file, index) => (
+                {files.map((file, index) => (
                     <ListGroup.Item
                         key={index}
-                        className="d-flex space-between align-center"
+                        className="d-flex justify-content-between align-items-center"
                         draggable
-                        onDragStart={(event) =>
-                            handleFileDragStart(event, file)
-                        }>
-                        {file.name}
+                        onDragStart={(e) => {
+                            handleDragStart(e, file);
+                        }}>
+                        <span>{file.name}</span>
                     </ListGroup.Item>
                 ))}
             </ListGroup>
-            <div className="d-flex space-between">
-                <FileInputButton onFileChange={onFileChange} />
-                {/* Obszar do upuszczania pliku, aby usunąć */}
+
+            <div className="d-flex justify-content-between mt-3">
+                {/* Przycisk do dodania pliku */}
+                <FileInputButton onFileChange={addFile} inputKey={inputKey} />
+
+                {/* Obszar do upuszczania pliku */}
                 <div
-                    onDragOver={handleDragOver} // Pozwala na upuszczanie plików
-                    onDrop={handleDrop} // Obsługuje usunięcie po upuszczeniu
-                    className="delete-file-button">
-                    <DeleteIcon />
+                    onDrop={handleDropOnDelete}
+                    onDragOver={(e) => e.preventDefault()} // Zapobiegaj domyślnemu zachowaniu przeglądarki
+                    className="delete-file d-flex align-items-center justify-content-center">
+                    <DeleteIcon style={{ color: "white" }} />
                 </div>
             </div>
         </div>

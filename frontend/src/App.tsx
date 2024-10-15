@@ -7,6 +7,7 @@ import StartProject from "./component/StartProject";
 import VideoEditor from "./component/VideoEditor"; // Import VideoEditor
 import { getProjects } from "./api/apiService"; // Upewnij się, że ścieżka jest poprawna
 import "./App.css";
+import { EditorProvider } from "./context/EditorContext";
 
 interface Project {
     id: number;
@@ -135,14 +136,12 @@ const App: React.FC = () => {
                     </Modal>
                 </>
             ) : (
-                <VideoEditor
-                    projectId={selectedProjectId!}
-                    onClose={handleEditorClose}
-                />
+                <EditorProvider>
+                    <VideoEditor />
+                </EditorProvider>
             )}
         </div>
     );
 };
 
 export default App;
-

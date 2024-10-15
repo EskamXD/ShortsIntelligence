@@ -1,0 +1,15 @@
+.delete-file {
+    /* width: 40px;
+    height: 40px; */
+    background-color: #dc3545;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+}
+
+.delete-file:hover {
+    background-color: #bb2d3b;
+    border: none;
+}

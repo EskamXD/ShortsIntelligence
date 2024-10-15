@@ -1,30 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useEditorContext } from "../../context/EditorContext";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
 import StopIcon from "@mui/icons-material/Stop";
 
 interface PreviewPanelProps {
-    videoURL: string | null; // URL wideo do podglądu
-    playbackPosition: number; // Aktualna pozycja odtwarzania
-    setPlaybackPosition: (position: number) => void; // Funkcja do ustawiania pozycji
     isPlaying: boolean; // Stan odtwarzania
     setIsPlaying: (isPlaying: boolean) => void; // Funkcja do ustawiania stanu odtwarzania
 }
 
 const PreviewPanel: React.FC<PreviewPanelProps> = ({
-    videoURL,
-    playbackPosition,
-    setPlaybackPosition,
     isPlaying,
     setIsPlaying,
 }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    useEffect(() => {
-        if (videoRef.current && videoURL) {
-            videoRef.current.currentTime = playbackPosition;
-        }
-    }, [playbackPosition, videoURL]);
+    const { setPlaybackPosition } = useEditorContext();
 
     // Throttling przy aktualizacji pozycji odtwarzania
     const updatePlaybackPosition = () => {
@@ -58,26 +49,20 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
 
     return (
         <div className="preview-panel">
-            {videoURL ? (
-                <>
-                    <video ref={videoRef}>
-                        <source src={videoURL} type="video/mp4" />
-                        Your browser does not support the video tag.
-                    </video>
+            <video ref={videoRef}>
+                <source src={""} type="video/mp4" />
+                Your browser does not support the video tag.
+            </video>
 
-                    {/* Niestandardowe kontrolki */}
-                    <div className="custom-controls">
-                        <button onClick={togglePlayPause}>
-                            {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-                        </button>
-                        <button onClick={stopVideo}>
-                            <StopIcon />
-                        </button>
-                    </div>
-                </>
-            ) : (
-                <p>No video selected</p>
-            )}
+            {/* Niestandardowe kontrolki */}
+            <div className="custom-controls">
+                <button onClick={togglePlayPause}>
+                    {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                </button>
+                <button onClick={stopVideo}>
+                    <StopIcon />
+                </button>
+            </div>
         </div>
     );
 };

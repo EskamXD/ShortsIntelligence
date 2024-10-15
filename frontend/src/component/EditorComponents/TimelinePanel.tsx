@@ -1,40 +1,28 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import TimelineScale from "../TimelineComponents/TimelineScale";
 import PlaybackIndicator from "../TimelineComponents/PlaybackIndicator";
 import ZoomableContainer from "../TimelineComponents/ZoomableContainer";
 import TimelineTrackContainer from "../TimelineComponents/TimelineTrackContainer";
+import { useEditorContext } from "../../context/EditorContext";
 
-interface TimelinePanelProps {
-    files: File[];
-    subtitles: string;
-    fps: number;
-    playbackPosition: number;
-    setPlaybackPosition: (position: number) => void;
-    isPlaying: boolean;
-    setIsPlaying: (isPlaying: boolean) => void;
-}
+const TimelinePanel: React.FC = () => {
+    const {
+        files,
+        playbackPosition,
+        isPlaying,
+        setIsPlaying,
+        setPlaybackPosition,
+        subtitles,
+        zoom,
+        setZoom,
+        timelinePanelWidth,
+        setTimelinePanelWidth,
+    } = useEditorContext();
 
-const TimelinePanel: React.FC<TimelinePanelProps> = ({
-    files,
-    subtitles,
-    fps,
-    playbackPosition,
-    setPlaybackPosition,
-    isPlaying,
-    setIsPlaying,
-}) => {
-    const [videoTrack1, setVideoTrack1] = useState<
-        { name: string; duration: number }[]
-    >([]);
-    const [audioTrack1, setAudioTrack1] = useState<
-        { name: string; duration: number }[]
-    >([]);
-    const [zoom, setZoom] = useState(1);
     const [mouseScrollOffset, setMouseScrollOffset] = useState(0);
+    const [scrollLeft, setScrollLeft] = useState(0);
     const [localPlaybackPosition, setLocalPlaybackPosition] =
         useState(playbackPosition);
-    const [scrollLeft, setScrollLeft] = useState(0);
-    const [timelinePanelWidth, setTimelinePanelWidth] = useState(0);
 
     const timelinePanelRef = useRef<HTMLDivElement>(null);
     const requestRef = useRef<number | null>(null);
@@ -67,17 +55,12 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({
         }
     };
 
+    // Ustawienie szerokości timeline panelu
     useEffect(() => {
-        console.log("Timeline panel ref:", timelinePanelRef.current);
         if (timelinePanelRef.current) {
-            // Oblicz szerokość panelu timeline
-            console.log(
-                "Timeline panel width:",
-                timelinePanelRef.current.offsetWidth
-            );
             setTimelinePanelWidth(timelinePanelRef.current.offsetWidth);
         }
-        // Możesz też nasłuchiwać zmian w szerokości okna
+
         const handleResize = () => {
             if (timelinePanelRef.current) {
                 setTimelinePanelWidth(timelinePanelRef.current.offsetWidth);
@@ -114,8 +97,6 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({
     const handleTimelineMouseDown = (event: React.MouseEvent) => {
         if (!timelineRef.current) return;
 
-        console.log("Mouse down at position:", event.clientX);
-
         const updatePosition = (clientX: number) => {
             const rect = timelineRef.current!.getBoundingClientRect();
             const mouseX = clientX - rect.left;
@@ -124,32 +105,23 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({
                 timelineLengthInSeconds
             );
 
-            // console.log("Updating playback position to:", newPlaybackPosition);
-
             setLocalPlaybackPosition(newPlaybackPosition);
-            setPlaybackPosition(newPlaybackPosition); // Ustawiamy globalny playback position
+            setPlaybackPosition(newPlaybackPosition); // Aktualizujemy globalny stan
             setIsPlaying(false); // Zatrzymujemy odtwarzanie po kliknięciu lub przeciąganiu
         };
 
         updatePosition(event.clientX);
 
-        // Obsługa przeciągania myszy
         const handleMouseMove = (event2: MouseEvent) => {
-            if (event2.buttons !== 1) return; // Sprawdzamy, czy przycisk myszy jest wciśnięty
-            // console.log(
-            //     "Mouse moving at position with button pressed:",
-            //     event2.clientX
-            // );
+            if (event2.buttons !== 1) return;
             updatePosition(event2.clientX);
         };
 
         const handleMouseUp = () => {
-            console.log("Mouse up, removing event listeners.");
-            window.removeEventListener("mousemove", handleMouseMove); // Usuwamy nasłuch na mousemove
-            window.removeEventListener("mouseup", handleMouseUp); // Usuwamy nasłuch na mouseup
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
         };
 
-        // Nasłuchujemy ruchu myszy i puszczenia przycisku
         window.addEventListener("mousemove", handleMouseMove);
         window.addEventListener("mouseup", handleMouseUp);
     };
@@ -164,7 +136,6 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({
         for (let i = 0; i <= timelineLengthInSeconds; i += majorTickInterval) {
             timelineScale.push({
                 timeInSeconds: i,
-                //format label as hh:mm:ss:fps
                 label: `${new Date(i * 1000).toISOString().substr(11, 8)}:00`,
                 isMajor: true,
             });
@@ -191,7 +162,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({
         const hours = Math.floor(timeInSeconds / 3600);
         const minutes = Math.floor((timeInSeconds % 3600) / 60);
         const seconds = Math.floor(timeInSeconds % 60);
-        const frames = Math.floor((timeInSeconds % 1) * fps); // Klatki na podstawie czasu
+        const frames = Math.floor((timeInSeconds % 1) * fps);
 
         return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
             2,
@@ -209,17 +180,13 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({
             className="timeline-panel-container">
             <div className="current-time">{`${formatTime(
                 localPlaybackPosition,
-                fps
+                30 // Założenie 30 fps
             )}`}</div>
 
             <ZoomableContainer
-                zoom={zoom}
-                setZoom={setZoom}
                 setMouseScrollOffset={setMouseScrollOffset}
-                timelineWidth={timelineWidth}
                 pixelsPerSecond={pixelsPerSecond}
-                setScrollLeft={setScrollLeft}
-                localPlaybackPosition={localPlaybackPosition}>
+                setScrollLeft={setScrollLeft}>
                 <div ref={timelineRef} onClick={handleTimelineMouseDown}>
                     <PlaybackIndicator
                         localPlaybackPosition={localPlaybackPosition}
@@ -235,8 +202,8 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({
                     />
 
                     <TimelineTrackContainer
-                        videoTrack={videoTrack1}
-                        audioTrack={audioTrack1}
+                        videoTrack={[]}
+                        audioTrack={[]}
                         zoom={zoom}
                         pixelsPerSecond={pixelsPerSecond}
                         files={files}
