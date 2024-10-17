@@ -23,7 +23,7 @@
     flex-direction: row;
     justify-content: space-between;
     /* margin-bottom: 20px; */
-    max-height: calc(60vh - 4rem);
+    max-height: 60vh;
     flex: 1;
 }
 
@@ -58,7 +58,7 @@
 }
 
 .preview-panel > video {
-    max-width: fit-content;
+    max-width: 100%;
     max-height: 90%;
     object-fit: contain;
     background-color: #000;
@@ -212,3 +212,4 @@
 .highlight {
     background-color: rgba(0, 123, 255, 0.1);
 }
+

@@ -1,11 +1,20 @@
 import React, { useRef, useState } from "react";
 import { useEditorContext } from "../../context/EditorContext"; // Import kontekstu
 
+interface TimelineTrackItem {
+    name: string;
+    duration: number;
+    leftOffset: number; // Nowa właściwość określająca pozycję elementu na osi czasu
+}
 interface TimelineTrackProps {
     trackType: "video" | "audio";
-    trackItems: { name: string; duration: number }[]; // Dane o długości ścieżki w sekundach
+    trackItems: TimelineTrackItem[]; // Dane o długości ścieżki w sekundach
     pixelsPerSecond: number; // Piksele na sekundę
     scrollLeft: number;
+    onFileProcessed: (
+        file: { name: string; duration: number },
+        trackType: "video" | "audio"
+    ) => void; // Callback do przekazywania przetworzonych plików
 }
 
 const TimelineTrack: React.FC<TimelineTrackProps> = ({
@@ -13,12 +22,10 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
     trackItems,
     pixelsPerSecond,
     scrollLeft,
+    onFileProcessed,
 }) => {
     const { zoom, files, timelinePanelWidth } = useEditorContext(); // Pobieramy zoom i files z Contextu
     const [isDragging, setIsDragging] = useState(false); // Stan przeciągania
-    const [droppedItems, setDroppedItems] = useState<
-        { name: string; duration: number; widthInPixels: number }[]
-    >([]); // Stan przechowujący upuszczone elementy
     const textMeasureRef = useRef<HTMLDivElement | null>(null); // Referencja do elementu mierzącego szerokość tekstu
 
     // Funkcja snapowania (np. co 1 sekundę), z uwzględnieniem długości filmu
@@ -63,30 +70,43 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
         }
     };
 
+    // Funkcja do przetwarzania pliku, rozdzielająca wideo i audio
     const processFile = (file: File) => {
-        if (file.type.startsWith("video/") || file.type.startsWith("audio/")) {
-            const mediaElement = document.createElement(
-                file.type.startsWith("video/") ? "video" : "audio"
-            );
-            mediaElement.src = URL.createObjectURL(file);
+        if (file.type.startsWith("video/")) {
+            const videoElement = document.createElement("video");
+            videoElement.src = URL.createObjectURL(file);
 
-            mediaElement.onloadedmetadata = () => {
-                const duration = mediaElement.duration;
+            videoElement.onloadedmetadata = () => {
+                const duration = videoElement.duration;
                 const widthInPixels = duration * pixelsPerSecond * zoom;
 
                 console.log(
                     `File: ${file.name}, Duration: ${duration}s, Width: ${widthInPixels}px`
                 );
 
-                // Dodanie pliku do stanu
-                setDroppedItems((prevItems) => [
-                    ...prevItems,
-                    {
-                        name: file.name,
-                        duration,
-                        widthInPixels,
-                    },
-                ]);
+                // Dodanie pliku wideo
+                onFileProcessed({ name: file.name, duration }, "video");
+
+                // Dodanie pliku audio (zakładając, że audio jest wbudowane)
+                onFileProcessed(
+                    { name: `${file.name} (audio)`, duration },
+                    "audio"
+                );
+            };
+        } else if (file.type.startsWith("audio/")) {
+            const audioElement = document.createElement("audio");
+            audioElement.src = URL.createObjectURL(file);
+
+            audioElement.onloadedmetadata = () => {
+                const duration = audioElement.duration;
+                const widthInPixels = duration * pixelsPerSecond * zoom;
+
+                console.log(
+                    `File: ${file.name}, Duration: ${duration}s, Width: ${widthInPixels}px`
+                );
+
+                // Dodanie pliku audio
+                onFileProcessed({ name: file.name, duration }, "audio");
             };
         } else {
             console.log("File is not a video or audio type:", file.name);
@@ -98,7 +118,7 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
         console.log("Drag end:", index);
     };
 
-    const totalDuration = [...trackItems, ...droppedItems].reduce(
+    const totalDuration = trackItems.reduce(
         (sum, item) => sum + item.duration,
         0
     );
@@ -143,9 +163,22 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                 }}
             />
 
-            {droppedItems.map((item, index) => {
+            {trackItems.map((item, index) => {
                 const itemText = `${item.name} - ${item.duration.toFixed(2)}s`;
                 const textWidth = measureTextWidth(itemText);
+                const left = item.leftOffset * pixelsPerSecond * zoom;
+
+                console.group();
+                console.log(index);
+                console.log(left, scrollLeft, left + scrollLeft + 10);
+                console.log(
+                    item.duration,
+                    pixelsPerSecond,
+                    zoom,
+                    textWidth,
+                    item.duration * pixelsPerSecond * zoom - textWidth - 10
+                );
+                console.groupEnd();
 
                 return (
                     <div
@@ -155,7 +188,7 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                         onDragStart={(e) => handleDragStart(e, index)}
                         onDragEnd={(e) => handleDragEnd(e, index)}
                         style={{
-                            position: "relative",
+                            position: "absolute",
                             backgroundColor:
                                 trackType === "video"
                                     ? "darkslateblue"
@@ -163,6 +196,10 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                             width: `${
                                 item.duration * pixelsPerSecond * zoom
                             }px`,
+                            border: "1px solid",
+                            borderColor:
+                                trackType === "video" ? "#241e45" : "#084808",
+                            left: `${left}px`,
                             height: "30px",
                             borderRadius: "4px",
                         }}>
@@ -171,7 +208,7 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                             style={{
                                 position: "absolute",
                                 left: `${Math.min(
-                                    scrollLeft + timelinePanelWidth / 2,
+                                    left + scrollLeft + 10,
                                     item.duration * pixelsPerSecond * zoom -
                                         textWidth -
                                         10
@@ -191,3 +228,4 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
 };
 
 export default TimelineTrack;
+

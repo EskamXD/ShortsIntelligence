@@ -1,4 +1,5 @@
 import React from "react";
+import { useEditorContext } from "../../context/EditorContext";
 
 interface PlaybackIndicatorProps {
     localPlaybackPosition: number;
@@ -13,6 +14,7 @@ const PlaybackIndicator: React.FC<PlaybackIndicatorProps> = ({
     zoom,
     handleMouseDown,
 }) => {
+    const { timelinePanelWidth } = useEditorContext();
     return (
         <div
             className="playback-indicator"
@@ -25,3 +27,4 @@ const PlaybackIndicator: React.FC<PlaybackIndicatorProps> = ({
 };
 
 export default PlaybackIndicator;
+

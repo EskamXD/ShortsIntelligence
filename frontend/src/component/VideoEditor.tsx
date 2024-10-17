@@ -6,14 +6,10 @@ import SubtitlesPanel from "./EditorComponents/SubtitlesPanel";
 import PreviewPanel from "./EditorComponents/PreviewPanel";
 import FileToolsPanel from "./EditorComponents/FileToolsPanel";
 import TimelinePanel from "./EditorComponents/TimelinePanel";
-import { useEditorContext } from "../context/EditorContext"; // Import kontekstu
 
 import "./VideoEditor.css";
 
 const VideoEditor: React.FC = () => {
-    const { playbackPosition, setPlaybackPosition, isPlaying, setIsPlaying } =
-        useEditorContext();
-
     return (
         <div className="video-editor">
             <div className="editor-top">
@@ -55,12 +51,7 @@ const VideoEditor: React.FC = () => {
                         </div>
                     </Tab.Container>
                 </div>
-                <PreviewPanel
-                    playbackPosition={playbackPosition}
-                    setPlaybackPosition={setPlaybackPosition}
-                    isPlaying={isPlaying}
-                    setIsPlaying={setIsPlaying}
-                />
+                <PreviewPanel />
             </div>
             <div className="editor-bottom">
                 <FileToolsPanel />
@@ -71,3 +62,4 @@ const VideoEditor: React.FC = () => {
 };
 
 export default VideoEditor;
+

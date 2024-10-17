@@ -4,18 +4,34 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
 import StopIcon from "@mui/icons-material/Stop";
 
-interface PreviewPanelProps {
-    isPlaying: boolean; // Stan odtwarzania
-    setIsPlaying: (isPlaying: boolean) => void; // Funkcja do ustawiania stanu odtwarzania
-}
-
-const PreviewPanel: React.FC<PreviewPanelProps> = ({
-    isPlaying,
-    setIsPlaying,
-}) => {
+const PreviewPanel: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    const { setPlaybackPosition } = useEditorContext();
+    const {
+        playbackPosition,
+        setPlaybackPosition,
+        isPlaying,
+        setIsPlaying,
+        videoURL,
+    } = useEditorContext();
+
+    useEffect(() => {
+        // Zmiana src wideo, gdy zmieni się URL
+        if (videoRef.current && videoURL) {
+            videoRef.current.src = videoURL;
+            videoRef.current.currentTime = playbackPosition; // Ustawiamy wideo na aktualną pozycję
+        }
+    }, [videoURL]);
+
+    useEffect(() => {
+        // Aktualizacja pozycji wideo, gdy zmieni się wskaźnik na osi czasu
+        if (
+            videoRef.current &&
+            playbackPosition !== videoRef.current.currentTime
+        ) {
+            videoRef.current.currentTime = playbackPosition;
+        }
+    }, [playbackPosition]);
 
     // Throttling przy aktualizacji pozycji odtwarzania
     const updatePlaybackPosition = () => {
@@ -40,6 +56,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
     // Funkcja zatrzymania odtwarzania
     const stopVideo = () => {
         if (videoRef.current) {
+            console.log(videoRef);
             videoRef.current.pause();
             videoRef.current.currentTime = 0;
             setPlaybackPosition(0); // Reset playbackPosition do początku
@@ -50,7 +67,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
     return (
         <div className="preview-panel">
             <video ref={videoRef}>
-                <source src={""} type="video/mp4" />
+                <source src={videoURL || ""} type="video/mp4" />
                 Your browser does not support the video tag.
             </video>
 
@@ -68,3 +85,4 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
 };
 
 export default PreviewPanel;
+

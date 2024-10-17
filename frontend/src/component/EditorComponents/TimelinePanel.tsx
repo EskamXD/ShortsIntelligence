@@ -9,12 +9,13 @@ const TimelinePanel: React.FC = () => {
     const {
         files,
         playbackPosition,
+        setPlaybackPosition,
         isPlaying,
         setIsPlaying,
-        setPlaybackPosition,
+        videoURL,
+        setVideoURL,
         subtitles,
         zoom,
-        setZoom,
         timelinePanelWidth,
         setTimelinePanelWidth,
     } = useEditorContext();
@@ -45,6 +46,7 @@ const TimelinePanel: React.FC = () => {
                 cancelAnimationFrame(requestRef.current!);
                 return prev;
             }
+            setPlaybackPosition(newPosition);
             return newPosition;
         });
 
@@ -70,14 +72,26 @@ const TimelinePanel: React.FC = () => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
+    // Synchronizacja wskaźnika odtwarzania z isPlaying
     useEffect(() => {
         if (isPlaying) {
-            lastUpdateRef.current = Date.now();
+            // Ustawienie URL wideo, gdy odtwarzanie się rozpoczyna
+            const videoFile = files.find((file) =>
+                file.type.startsWith("video/")
+            );
+            if (videoFile) {
+                const videoSrc = URL.createObjectURL(videoFile);
+                setVideoURL(videoSrc); // Ustawiamy URL wideo w kontekście
+            } else {
+                console.log("Brak plików wideo na osi czasu");
+            }
+
+            lastUpdateRef.current = Date.now(); // Ustawiamy czas startu
             requestRef.current = requestAnimationFrame(
                 animatePlaybackIndicator
             );
         } else if (requestRef.current) {
-            cancelAnimationFrame(requestRef.current);
+            cancelAnimationFrame(requestRef.current); // Pauza - zatrzymujemy animację
         }
 
         return () => {
@@ -85,13 +99,33 @@ const TimelinePanel: React.FC = () => {
                 cancelAnimationFrame(requestRef.current);
             }
         };
-    }, [isPlaying]);
+    }, [isPlaying, files]); // files nasłuchujemy w przypadku zmiany plików
 
     useEffect(() => {
         if (playbackPosition !== localPlaybackPosition) {
             setLocalPlaybackPosition(playbackPosition);
         }
     }, [playbackPosition]);
+
+    // Funkcja przewijania, jeśli wskaźnik jest poza widocznym zakresem
+    useEffect(() => {
+        if (timelineRef.current && timelinePanelRef.current) {
+            const indicatorPositionPx =
+                localPlaybackPosition * pixelsPerSecond * zoom;
+            const timelineVisibleStartPx = scrollLeft;
+            const timelineVisibleEndPx = scrollLeft + timelinePanelWidth;
+
+            if (indicatorPositionPx < timelineVisibleStartPx) {
+                // Wskaźnik poza lewą krawędzią - przewijamy w lewo
+                setScrollLeft(
+                    Math.max(0, indicatorPositionPx - timelinePanelWidth / 2)
+                );
+            } else if (indicatorPositionPx > timelineVisibleEndPx) {
+                // Wskaźnik poza prawą krawędzią - przewijamy w prawo
+                setScrollLeft(indicatorPositionPx - timelinePanelWidth / 2);
+            }
+        }
+    }, [localPlaybackPosition, scrollLeft, timelinePanelWidth, zoom]);
 
     // Obsługa kliknięcia i przeciągania na skali czasu
     const handleTimelineMouseDown = (event: React.MouseEvent) => {
@@ -186,7 +220,8 @@ const TimelinePanel: React.FC = () => {
             <ZoomableContainer
                 setMouseScrollOffset={setMouseScrollOffset}
                 pixelsPerSecond={pixelsPerSecond}
-                setScrollLeft={setScrollLeft}>
+                setScrollLeft={setScrollLeft}
+                localPlaybackPosition={localPlaybackPosition}>
                 <div ref={timelineRef} onClick={handleTimelineMouseDown}>
                     <PlaybackIndicator
                         localPlaybackPosition={localPlaybackPosition}
@@ -202,13 +237,8 @@ const TimelinePanel: React.FC = () => {
                     />
 
                     <TimelineTrackContainer
-                        videoTrack={[]}
-                        audioTrack={[]}
-                        zoom={zoom}
                         pixelsPerSecond={pixelsPerSecond}
-                        files={files}
                         scrollLeft={scrollLeft}
-                        timelinePanelWidth={timelinePanelWidth}
                     />
                 </div>
             </ZoomableContainer>
@@ -217,3 +247,4 @@ const TimelinePanel: React.FC = () => {
 };
 
 export default TimelinePanel;
+
