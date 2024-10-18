@@ -147,7 +147,7 @@
     position: relative;
     overflow-x: scroll;
     padding: 0;
-    padding-top: 40px;
+    padding-top: 50px;
     /* scroll-behavior: smooth; */
 }
 .playback-indicator {
@@ -171,7 +171,7 @@
 .timeline-scale {
     position: relative;
     cursor: pointer;
-    height: 30px;
+    height: 40px;
 }
 .timeline-tick {
     position: absolute;

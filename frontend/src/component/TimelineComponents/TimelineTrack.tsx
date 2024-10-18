@@ -46,6 +46,10 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
         };
     }, []);
 
+    // useEffect(() => {
+    //     console.log(scrollLeft);
+    // }, [scrollLeft]);
+
     // Funkcja snapowania (np. co 1 sekundę), z uwzględnieniem długości filmu
     const snapToGrid = (position: number, itemWidth: number) => {
         const snapInterval = pixelsPerSecond; // Przyciąganie co sekundę
@@ -173,6 +177,21 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
         return 0;
     };
 
+    const formatTime = (timeInSeconds: number, fps: number) => {
+        const hours = Math.floor(timeInSeconds / 3600);
+        const minutes = Math.floor((timeInSeconds % 3600) / 60);
+        const seconds = Math.floor(timeInSeconds % 60);
+        const frames = Math.floor((timeInSeconds % 1) * fps);
+
+        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+            2,
+            "0"
+        )}:${String(seconds).padStart(2, "0")}:${String(frames).padStart(
+            2,
+            "0"
+        )}`;
+    };
+
     return (
         <div
             className="timeline-track"
@@ -199,9 +218,10 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
             {timelineItems
                 .filter((item) => item.type === trackType)
                 .map((item, index) => {
-                    const itemText = `${item.name} - ${item.duration.toFixed(
-                        2
-                    )}s`;
+                    const itemText = `${item.name} - ${formatTime(
+                        item.duration,
+                        30
+                    )}`;
                     const textWidth = measureTextWidth(itemText);
                     const left = item.leftOffset * pixelsPerSecond * zoom;
 
@@ -217,6 +237,7 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                         !isAltPressed &&
                         left + 10 < scrollLeft + timelinePanelWidth
                     ) {
+                        // console.log("Item is visible:", index);
                         textLeft = Math.max(
                             10,
                             Math.min(scrollLeft + 10 - left, maxTextLeft)

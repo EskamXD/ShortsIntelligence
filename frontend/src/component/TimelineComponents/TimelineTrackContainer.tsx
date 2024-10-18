@@ -24,7 +24,7 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
                 localPlaybackPosition >= item.startPosition &&
                 localPlaybackPosition <= item.startPosition + item.duration
             ) {
-                console.log(`Playing video: ${item.name}`);
+                // console.log(`Playing video: ${item.name}`);
             }
         });
     }, [localPlaybackPosition, timelineItems]);

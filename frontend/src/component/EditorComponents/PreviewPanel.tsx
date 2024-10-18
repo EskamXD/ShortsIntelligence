@@ -8,19 +8,30 @@ const PreviewPanel: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const {
+        files,
         playbackPosition,
         setPlaybackPosition,
         isPlaying,
         setIsPlaying,
         isDragingPlaybackIndicator,
         videoURL,
+        setVideoURL,
         halfQualityVideoURL, // Dodane źródło niskiej jakości
         timelineItems,
     } = useEditorContext();
 
     useEffect(() => {
-        console.log(timelineItems);
-    }, [timelineItems]);
+        if (timelineItems.length > 0) {
+            const matchedFile = files.find(
+                (file) => file.name === timelineItems[0].name
+            );
+
+            if (matchedFile) {
+                const tempUrl = URL.createObjectURL(matchedFile); // Tworzymy URL z pliku
+                setVideoURL(tempUrl);
+            }
+        }
+    }, [timelineItems, files, setVideoURL]);
 
     useEffect(() => {
         console.log(isDragingPlaybackIndicator);

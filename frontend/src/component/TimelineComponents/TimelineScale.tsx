@@ -1,4 +1,4 @@
-import React from "react";
+import React, { forwardRef } from "react";
 
 interface TimelineScaleProps {
     timelineScale: {
@@ -8,18 +8,21 @@ interface TimelineScaleProps {
     }[];
     zoom: number;
     pixelsPerSecond: number;
+    handleMouseDown: (event: React.MouseEvent) => void;
 }
 
 const TimelineScale: React.FC<TimelineScaleProps> = ({
     timelineScale,
     zoom,
     pixelsPerSecond,
+    handleMouseDown,
 }) => {
     return (
         <div
             id="timeline-scale"
             className="timeline-scale d-flex"
-            style={{ width: `${6000 * zoom}px` }}>
+            style={{ width: `${6000 * zoom}px` }}
+            onClick={handleMouseDown}>
             {timelineScale.map((tick, index) => (
                 <div
                     key={index}
@@ -31,7 +34,7 @@ const TimelineScale: React.FC<TimelineScaleProps> = ({
                         borderRight: tick.isMajor
                             ? "1px solid #ccc"
                             : "1px solid #eee",
-                        height: tick.isMajor ? "20px" : "10px",
+                        height: tick.isMajor ? "35px" : "20px",
                     }}>
                     {tick.isMajor && (
                         <div

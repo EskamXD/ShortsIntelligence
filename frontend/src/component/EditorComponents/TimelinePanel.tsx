@@ -29,7 +29,7 @@ const TimelinePanel: React.FC = () => {
     const timelinePanelRef = useRef<HTMLDivElement>(null);
     const requestRef = useRef<number | null>(null);
     const lastUpdateRef = useRef<number>(Date.now());
-    const timelineRef = useRef<HTMLDivElement>(null);
+    const zoomableContainerRef = useRef<HTMLDivElement>(null);
 
     const pixelsPerSecond = 100;
     const timelineLengthInSeconds = 60;
@@ -137,51 +137,51 @@ const TimelinePanel: React.FC = () => {
         }
     }, [playbackPosition, localPlaybackPosition]);
 
+    const handleIndicatorDrag = (event: React.MouseEvent) => {
+        if (!zoomableContainerRef.current) return;
+
+        const updatePosition = (clientX: number) => {
+            const rect = zoomableContainerRef.current!.getBoundingClientRect();
+            const mouseX = clientX - rect.left;
+            const newPlaybackPosition = Math.min(
+                Math.max(mouseX / (pixelsPerSecond * zoom), 0),
+                timelineLengthInSeconds
+            );
+
+            setLocalPlaybackPosition(newPlaybackPosition);
+            setPlaybackPosition(newPlaybackPosition);
+        };
+
+        const handleMouseMove = (event2: MouseEvent) => {
+            setIsDragingPlaybackIndicator(true);
+            updatePosition(event2.clientX);
+        };
+
+        const handleMouseUp = () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
+            setIsDragingPlaybackIndicator(false);
+        };
+
+        const handleMouseDown = (mouseDownEvent: MouseEvent) => {
+            if (mouseDownEvent.button === 0) {
+                window.addEventListener("mousemove", handleMouseMove);
+                window.addEventListener("mouseup", handleMouseUp);
+            }
+        };
+
+        window.addEventListener("mousedown", handleMouseDown);
+    };
+
     const handleTimelineMouseDown = useCallback(
         (event: React.MouseEvent) => {
             const target = event.target as HTMLElement;
 
-            // Obsługa przeciągania wskaźnika odtwarzania
-            const handleIndicatorDrag = () => {
-                if (!timelineRef.current) return;
-
-                const updatePosition = (clientX: number) => {
-                    const rect = timelineRef.current!.getBoundingClientRect();
-                    const mouseX = clientX - rect.left;
-                    const newPlaybackPosition = Math.min(
-                        Math.max(mouseX / (pixelsPerSecond * zoom), 0),
-                        timelineLengthInSeconds
-                    );
-
-                    setLocalPlaybackPosition(newPlaybackPosition);
-                    setPlaybackPosition(newPlaybackPosition);
-                    setIsDragingPlaybackIndicator(true);
-                    setIsPlaying(false);
-                };
-
-                updatePosition(event.clientX);
-
-                const handleMouseMove = (event2: MouseEvent) => {
-                    updatePosition(event2.clientX);
-                };
-
-                const handleMouseUp = () => {
-                    window.removeEventListener("mouseup", handleMouseUp);
-                    window.removeEventListener("mousemove", handleMouseMove);
-                    setIsDragingPlaybackIndicator(false);
-                };
-
-                window.addEventListener("mouseup", handleMouseUp);
-                window.addEventListener("mousemove", handleMouseMove);
-            };
-
-            // Obsługa zaznaczania elementu media-item
             const handleMediaItemClick = (target: HTMLElement) => {
                 const mediaItems =
                     document.getElementsByClassName("media-item");
                 if (!mediaItems) return;
 
-                // Usuń obramowanie ze wszystkich elementów media-item
                 Array.from(mediaItems).forEach((item) => {
                     (item as HTMLElement).style.border =
                         "2px solid transparent";
@@ -203,17 +203,16 @@ const TimelinePanel: React.FC = () => {
                 }
             };
 
-            // Logika sterująca — ustalanie, czy kliknięto wskaźnik odtwarzania, czy media-item
             if (["playback-indicator", "timeline-scale"].includes(target.id)) {
-                handleIndicatorDrag();
+                handleIndicatorDrag(event); // Inicjalizacja przeciągania
             } else {
                 handleMediaItemClick(target);
             }
 
-            event.stopPropagation(); // Zatrzymujemy propagację, aby uniknąć wywołania kliknięcia na wyższym poziomie
+            event.stopPropagation();
         },
         [
-            timelineRef,
+            zoomableContainerRef,
             pixelsPerSecond,
             zoom,
             timelineLengthInSeconds,
@@ -288,7 +287,7 @@ const TimelinePanel: React.FC = () => {
                 pixelsPerSecond={pixelsPerSecond}
                 setScrollLeft={setScrollLeft}
                 localPlaybackPosition={localPlaybackPosition}>
-                <div ref={timelineRef} onClick={handleTimelineMouseDown}>
+                <div ref={zoomableContainerRef}>
                     <PlaybackIndicator
                         localPlaybackPosition={localPlaybackPosition}
                         pixelsPerSecond={pixelsPerSecond}
@@ -300,6 +299,7 @@ const TimelinePanel: React.FC = () => {
                         timelineScale={timelineScale}
                         zoom={zoom}
                         pixelsPerSecond={pixelsPerSecond}
+                        handleMouseDown={handleTimelineMouseDown}
                     />
 
                     <TimelineTrackContainer
