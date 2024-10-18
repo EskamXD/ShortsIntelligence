@@ -148,6 +148,7 @@
     overflow-x: scroll;
     padding: 0;
     padding-top: 40px;
+    /* scroll-behavior: smooth; */
 }
 .playback-indicator {
     position: absolute;
@@ -201,15 +202,31 @@
 }
 
 .timeline-track {
+    position: relative;
+    display: flex;
+    align-items: center;
     border-top: 1px solid #ccc;
     border-bottom: 1px solid #ccc;
     padding: 10px 0;
     min-height: 50px;
+    transition: background-color 0.25s ease-in-out;
     /* margin-top: 10px; */
-    position: relative;
 }
 
 .highlight {
     background-color: rgba(0, 123, 255, 0.1);
 }
 
+.media-item {
+    position: absolute;
+    border: 1px solid;
+    height: 30px;
+    border-radius: 4px;
+}
+.media-item-text {
+    position: absolute;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: left 0.25s ease-in-out;
+}

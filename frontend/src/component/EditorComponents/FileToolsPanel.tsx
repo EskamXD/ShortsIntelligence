@@ -6,7 +6,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import "./FileToolsPanel.css";
 
 const FileToolsPanel: React.FC = () => {
-    const { files, addFile, removeFile, inputKey } = useFileManagement();
+    const { files, addFiles, removeFile, inputKey } = useFileManagement();
 
     const handleDragStart = (event: React.DragEvent, file: File) => {
         event.dataTransfer.setData("text/plain", file.name);
@@ -44,7 +44,7 @@ const FileToolsPanel: React.FC = () => {
 
             <div className="d-flex justify-content-between mt-3">
                 {/* Przycisk do dodania pliku */}
-                <FileInputButton onFileChange={addFile} inputKey={inputKey} />
+                <FileInputButton onFileChange={addFiles} inputKey={inputKey} />
 
                 {/* Obszar do upuszczania pliku */}
                 <div

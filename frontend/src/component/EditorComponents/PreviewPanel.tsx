@@ -12,42 +12,92 @@ const PreviewPanel: React.FC = () => {
         setPlaybackPosition,
         isPlaying,
         setIsPlaying,
+        isDragingPlaybackIndicator,
         videoURL,
+        halfQualityVideoURL, // Dodane źródło niskiej jakości
+        timelineItems,
     } = useEditorContext();
 
     useEffect(() => {
-        // Zmiana src wideo, gdy zmieni się URL
-        if (videoRef.current && videoURL) {
+        console.log(timelineItems);
+    }, [timelineItems]);
+
+    useEffect(() => {
+        console.log(isDragingPlaybackIndicator);
+    }, [isDragingPlaybackIndicator]);
+
+    useEffect(() => {
+        if (isDragingPlaybackIndicator && videoRef.current) {
+            let animationFrameId: number;
+
+            const updateCurrentTime = () => {
+                // Sprawdzamy, czy przeciąganie wskaźnika nadal trwa
+                if (!isDragingPlaybackIndicator) {
+                    cancelAnimationFrame(animationFrameId);
+                    return;
+                }
+
+                if (videoRef.current) {
+                    // Ustawiamy niską jakość podczas przeciągania
+                    if (
+                        videoRef.current.src !== halfQualityVideoURL &&
+                        halfQualityVideoURL
+                    ) {
+                        videoRef.current.src = halfQualityVideoURL;
+                    }
+
+                    videoRef.current.currentTime = playbackPosition;
+                    // console.log(
+                    //     "Dragging playback indicator (with requestAnimationFrame and low quality)",
+                    //     isDragingPlaybackIndicator
+                    // );
+                }
+
+                animationFrameId = requestAnimationFrame(updateCurrentTime);
+            };
+
+            // Używamy requestAnimationFrame do aktualizacji currentTime
+            animationFrameId = requestAnimationFrame(updateCurrentTime);
+
+            return () => cancelAnimationFrame(animationFrameId);
+        }
+    }, [playbackPosition, isDragingPlaybackIndicator, halfQualityVideoURL]);
+
+    useEffect(() => {
+        if (!isDragingPlaybackIndicator && videoRef.current && videoURL) {
+            // Po zakończeniu przeciągania wracamy do wysokiej jakości
+            if (videoRef.current.src !== videoURL) {
+                videoRef.current.src = videoURL;
+                videoRef.current.currentTime = playbackPosition;
+                // console.log("Switching back to high quality");
+            }
+        }
+    }, [isDragingPlaybackIndicator]);
+
+    useEffect(() => {
+        if (!isPlaying && videoURL && videoRef.current) {
             videoRef.current.src = videoURL;
-            videoRef.current.currentTime = playbackPosition; // Ustawiamy wideo na aktualną pozycję
+            videoRef.current.currentTime = playbackPosition;
+            // console.log("Setting video source and playback position");
         }
     }, [videoURL]);
 
     useEffect(() => {
-        // Aktualizacja pozycji wideo, gdy zmieni się wskaźnik na osi czasu
-        if (
-            videoRef.current &&
-            playbackPosition !== videoRef.current.currentTime
-        ) {
+        if (videoRef.current) {
             videoRef.current.currentTime = playbackPosition;
+            // console.log("Setting playback position");
         }
     }, [playbackPosition]);
-
-    // Throttling przy aktualizacji pozycji odtwarzania
-    const updatePlaybackPosition = () => {
-        if (videoRef.current) {
-            setPlaybackPosition(videoRef.current.currentTime);
-        }
-    };
 
     // Funkcja play/pause
     const togglePlayPause = () => {
         if (videoRef.current) {
             if (isPlaying) {
                 videoRef.current.pause();
-                updatePlaybackPosition();
+                // console.log("Pausing video");
             } else {
                 videoRef.current.play();
+                // console.log("Playing video");
             }
             setIsPlaying(!isPlaying);
         }
@@ -56,11 +106,11 @@ const PreviewPanel: React.FC = () => {
     // Funkcja zatrzymania odtwarzania
     const stopVideo = () => {
         if (videoRef.current) {
-            console.log(videoRef);
             videoRef.current.pause();
             videoRef.current.currentTime = 0;
-            setPlaybackPosition(0); // Reset playbackPosition do początku
+            setPlaybackPosition(0);
             setIsPlaying(false);
+            // console.log("Stopping video");
         }
     };
 
@@ -85,4 +135,3 @@ const PreviewPanel: React.FC = () => {
 };
 
 export default PreviewPanel;
-

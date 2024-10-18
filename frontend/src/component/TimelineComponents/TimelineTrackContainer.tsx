@@ -1,68 +1,85 @@
 import React, { useEffect, useState } from "react";
 import TimelineTrack from "../TimelineComponents/TimelineTrack";
 import { useEditorContext } from "../../context/EditorContext";
-
-interface TrackItem {
-    name: string;
-    duration: number;
-    leftOffset: number; // Pozycja elementu na osi czasu
-    widthInPixels: number; // Szerokość elementu w pikselach
-}
+import { v4 as uuidv4 } from "uuid";
+import { TrackItem } from "../../interfaces";
 
 interface TimelineTrackContainerProps {
     pixelsPerSecond: number;
     scrollLeft: number;
+    localPlaybackPosition: number;
 }
 
 const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
     pixelsPerSecond,
     scrollLeft,
+    localPlaybackPosition,
 }) => {
-    const { zoom } = useEditorContext();
+    const { timelineItems, setTimelineItems, zoom } = useEditorContext();
 
-    const [videoTrackItems, setVideoTrackItems] = useState<TrackItem[]>([]);
-    const [audioTrackItems, setAudioTrackItems] = useState<TrackItem[]>([]);
+    useEffect(() => {
+        // Sprawdzamy, czy aktualnie odtwarzane są elementy wideo
+        timelineItems.forEach((item) => {
+            if (
+                localPlaybackPosition >= item.startPosition &&
+                localPlaybackPosition <= item.startPosition + item.duration
+            ) {
+                console.log(`Playing video: ${item.name}`);
+            }
+        });
+    }, [localPlaybackPosition, timelineItems]);
 
-    // Funkcja dodająca przetworzony plik do odpowiedniego tracka z leftOffset i widthInPixels
+    // Funkcja do obsługi przetwarzania plików
     const handleFileProcessed = (
         file: { name: string; duration: number },
         trackType: "video" | "audio"
     ) => {
-        const widthInPixels = file.duration * pixelsPerSecond * zoom;
-        const leftOffset = videoTrackItems.length
-            ? videoTrackItems[videoTrackItems.length - 1].leftOffset +
-              videoTrackItems[videoTrackItems.length - 1].widthInPixels /
-                  (pixelsPerSecond * zoom)
+        console.log(`File processed: ${file.name}`);
+
+        //generate unique id for new item
+        const id = uuidv4();
+
+        const itemWidth = file.duration * pixelsPerSecond * zoom;
+
+        const lastTrackItem = timelineItems
+            .filter((item) => item.type === trackType)
+            .slice(-1)[0];
+
+        const leftOffset = lastTrackItem
+            ? lastTrackItem.leftOffset +
+              lastTrackItem.itemWidth / (pixelsPerSecond * zoom)
             : 0;
 
-        const newItem: TrackItem = {
+        const startPosition = leftOffset * pixelsPerSecond * zoom;
+
+        const newItem = {
+            id: id,
+            type: trackType,
             name: file.name,
             duration: file.duration,
             leftOffset,
-            widthInPixels,
-        };
+            itemWidth,
+            startPosition,
+        } as TrackItem;
 
-        if (trackType === "video") {
-            setVideoTrackItems((prevItems) => [...prevItems, newItem]);
-        } else {
-            setAudioTrackItems((prevItems) => [...prevItems, newItem]);
-        }
+        // push new item to timelineItems
+        console.log("Adding new item to timeline:", newItem);
+        setTimelineItems((prevItems: TrackItem[]) => [...prevItems, newItem]);
     };
 
     return (
         <div
+            id="timeline-track-container"
             className="d-flex flex-column"
             style={{ width: `${6000 * zoom}px` }}>
             <TimelineTrack
                 trackType="video"
-                trackItems={videoTrackItems}
                 pixelsPerSecond={pixelsPerSecond}
                 scrollLeft={scrollLeft}
                 onFileProcessed={handleFileProcessed}
             />
             <TimelineTrack
                 trackType="audio"
-                trackItems={audioTrackItems}
                 pixelsPerSecond={pixelsPerSecond}
                 scrollLeft={scrollLeft}
                 onFileProcessed={handleFileProcessed}
@@ -72,4 +89,3 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
 };
 
 export default TimelineTrackContainer;
-

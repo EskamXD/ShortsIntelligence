@@ -5,22 +5,33 @@ export const useFileManagement = () => {
     const { files, setFiles } = useEditorContext();
     const [inputKey, setInputKey] = useState(0); // Aby resetować input
 
-    // Dodaj plik
-    const addFile = useCallback(
-        (file: File) => {
-            console.log("Próba dodania pliku:", file.name);
-            // Sprawdź, czy plik już istnieje
-            const isFileExist = files.some((f) => f.name === file.name);
-            console.log("Czy plik już istnieje?", isFileExist);
+    // Dodaj wiele plików
+    const addFiles = useCallback(
+        (newFiles: File[]) => {
+            // Logujemy każdy plik
+            newFiles.forEach((file) => {
+                console.log("Próba dodania pliku:", file.name);
+            });
 
-            if (!isFileExist) {
-                // Tworzymy nową tablicę plików i ustawiamy ją w stanie
-                const newFiles = [...files, file];
-                setFiles(newFiles);
-                console.log("Dodano plik:", file.name, newFiles);
+            // Filtrujemy nowe pliki, aby dodać tylko te, które jeszcze nie istnieją
+            const filesToAdd = newFiles.filter(
+                (file) => !files.some((f) => f.name === file.name)
+            );
+
+            if (filesToAdd.length > 0) {
+                // Tworzymy nową tablicę z istniejącymi plikami i nowymi plikami
+                const updatedFiles = [...files, ...filesToAdd];
+                setFiles(updatedFiles);
+
+                filesToAdd.forEach((file) => {
+                    console.log("Dodano plik:", file.name);
+                });
+
                 setInputKey((prevKey) => prevKey + 1); // Reset input po dodaniu pliku
             } else {
-                console.log("Plik już istnieje i nie można dodać:", file.name);
+                console.log(
+                    "Żaden nowy plik nie został dodany. Wszystkie pliki już istnieją."
+                );
             }
         },
         [files, setFiles]
@@ -43,23 +54,29 @@ export const useFileManagement = () => {
     const handleDrop = useCallback(
         (event: React.DragEvent) => {
             event.preventDefault();
-            const fileName = event.dataTransfer.getData("text/plain");
-            const file = files.find((file) => file.name === fileName);
-            console.log("Przeciągnięto plik:", file ? file.name : "brak pliku");
 
-            if (file) {
-                addFile(file);
+            // Pobieramy wszystkie pliki przeciągnięte do obszaru
+            const droppedFiles = event.dataTransfer.files;
+            if (droppedFiles.length > 0) {
+                // Konwertujemy FileList do tablicy i przekazujemy do addFiles
+                const filesArray = Array.from(droppedFiles);
+                console.log(
+                    "Przeciągnięto pliki:",
+                    filesArray.map((file) => file.name)
+                );
+
+                addFiles(filesArray); // Dodajemy wszystkie pliki naraz
             }
 
             // Resetuj dataTransfer po zakończeniu operacji
             event.dataTransfer.clearData();
         },
-        [addFile]
+        [addFiles] // Zależy od addFiles
     );
 
     return {
         files,
-        addFile,
+        addFiles,
         removeFile,
         handleDrop,
         inputKey, // Klucz do resetu input[type="file"]

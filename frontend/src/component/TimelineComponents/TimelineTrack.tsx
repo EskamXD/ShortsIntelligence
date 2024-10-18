@@ -1,14 +1,8 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useEditorContext } from "../../context/EditorContext"; // Import kontekstu
 
-interface TimelineTrackItem {
-    name: string;
-    duration: number;
-    leftOffset: number; // Nowa właściwość określająca pozycję elementu na osi czasu
-}
 interface TimelineTrackProps {
     trackType: "video" | "audio";
-    trackItems: TimelineTrackItem[]; // Dane o długości ścieżki w sekundach
     pixelsPerSecond: number; // Piksele na sekundę
     scrollLeft: number;
     onFileProcessed: (
@@ -19,14 +13,38 @@ interface TimelineTrackProps {
 
 const TimelineTrack: React.FC<TimelineTrackProps> = ({
     trackType,
-    trackItems,
     pixelsPerSecond,
     scrollLeft,
     onFileProcessed,
 }) => {
-    const { zoom, files, timelinePanelWidth } = useEditorContext(); // Pobieramy zoom i files z Contextu
+    const { zoom, files, timelinePanelWidth, timelineItems } =
+        useEditorContext(); // Pobieramy zoom i files z Contextu
     const [isDragging, setIsDragging] = useState(false); // Stan przeciągania
+    const [isAltPressed, setIsAltPressed] = useState(false); // Nowy stan do śledzenia klawisza Alt
     const textMeasureRef = useRef<HTMLDivElement | null>(null); // Referencja do elementu mierzącego szerokość tekstu
+
+    // Obsługa klawisza Alt
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.altKey) {
+                setIsAltPressed(true);
+            }
+        };
+
+        const handleKeyUp = (event: KeyboardEvent) => {
+            if (!event.altKey) {
+                setIsAltPressed(false);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+        };
+    }, []);
 
     // Funkcja snapowania (np. co 1 sekundę), z uwzględnieniem długości filmu
     const snapToGrid = (position: number, itemWidth: number) => {
@@ -81,17 +99,36 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                 const widthInPixels = duration * pixelsPerSecond * zoom;
 
                 console.log(
-                    `File: ${file.name}, Duration: ${duration}s, Width: ${widthInPixels}px`
+                    `Type: video, File: ${file.name}, Duration: ${duration}s, Width: ${widthInPixels}px`
                 );
 
                 // Dodanie pliku wideo
                 onFileProcessed({ name: file.name, duration }, "video");
 
-                // Dodanie pliku audio (zakładając, że audio jest wbudowane)
-                onFileProcessed(
-                    { name: `${file.name} (audio)`, duration },
-                    "audio"
-                );
+                // Po dodaniu wideo, sprawdźmy, czy ma audio
+                videoElement.onplay = () => {
+                    const audioContext = new (window.AudioContext ||
+                        (window as any).webkitAudioContext)();
+                    const videoSource =
+                        audioContext.createMediaElementSource(videoElement);
+
+                    if (videoSource.mediaElement) {
+                        console.log("Video has an audio track");
+                        // Dodanie audio, jeśli istnieje
+                        onFileProcessed(
+                            { name: `${file.name} (audio)`, duration },
+                            "audio"
+                        );
+                    } else {
+                        console.log("Video has no audio track");
+                    }
+                };
+
+                // Odtwórz wideo, aby aktywować `onplay` i przetworzyć audio
+                videoElement.play().then(() => {
+                    // Możesz zatrzymać wideo, jeśli nie chcesz go odtwarzać
+                    videoElement.pause();
+                });
             };
         } else if (file.type.startsWith("audio/")) {
             const audioElement = document.createElement("audio");
@@ -102,7 +139,7 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                 const widthInPixels = duration * pixelsPerSecond * zoom;
 
                 console.log(
-                    `File: ${file.name}, Duration: ${duration}s, Width: ${widthInPixels}px`
+                    `Type: audio, File: ${file.name}, Duration: ${duration}s, Width: ${widthInPixels}px`
                 );
 
                 // Dodanie pliku audio
@@ -118,7 +155,7 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
         console.log("Drag end:", index);
     };
 
-    const totalDuration = trackItems.reduce(
+    const totalDuration = timelineItems.reduce(
         (sum, item) => sum + item.duration,
         0
     );
@@ -144,15 +181,11 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             style={{
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
                 width: `${containerWidth}px`,
                 border: isDragging ? "2px dashed #2d8ceb" : "2px solid #ccc",
                 backgroundColor: isDragging
                     ? "rgba(45, 140, 235, 0.1)"
                     : "transparent",
-                transition: "background-color 0.3s ease",
             }}>
             <div
                 ref={textMeasureRef}
@@ -163,69 +196,70 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                 }}
             />
 
-            {trackItems.map((item, index) => {
-                const itemText = `${item.name} - ${item.duration.toFixed(2)}s`;
-                const textWidth = measureTextWidth(itemText);
-                const left = item.leftOffset * pixelsPerSecond * zoom;
+            {timelineItems
+                .filter((item) => item.type === trackType)
+                .map((item, index) => {
+                    const itemText = `${item.name} - ${item.duration.toFixed(
+                        2
+                    )}s`;
+                    const textWidth = measureTextWidth(itemText);
+                    const left = item.leftOffset * pixelsPerSecond * zoom;
 
-                console.group();
-                console.log(index);
-                console.log(left, scrollLeft, left + scrollLeft + 10);
-                console.log(
-                    item.duration,
-                    pixelsPerSecond,
-                    zoom,
-                    textWidth,
-                    item.duration * pixelsPerSecond * zoom - textWidth - 10
-                );
-                console.groupEnd();
+                    // Obliczanie maksymalnej pozycji dla tekstu
+                    const maxTextLeft =
+                        left +
+                        item.duration * pixelsPerSecond * zoom -
+                        textWidth -
+                        10;
 
-                return (
-                    <div
-                        key={`dropped-${index}`}
-                        className="media-item"
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, index)}
-                        onDragEnd={(e) => handleDragEnd(e, index)}
-                        style={{
-                            position: "absolute",
-                            backgroundColor:
-                                trackType === "video"
-                                    ? "darkslateblue"
-                                    : "darkgreen",
-                            width: `${
-                                item.duration * pixelsPerSecond * zoom
-                            }px`,
-                            border: "1px solid",
-                            borderColor:
-                                trackType === "video" ? "#241e45" : "#084808",
-                            left: `${left}px`,
-                            height: "30px",
-                            borderRadius: "4px",
-                        }}>
+                    let textLeft = 10;
+                    if (
+                        !isAltPressed &&
+                        left + 10 < scrollLeft + timelinePanelWidth
+                    ) {
+                        textLeft = Math.max(
+                            10,
+                            Math.min(scrollLeft + 10 - left, maxTextLeft)
+                        ); // Dopiero gdy przewiniemy wystarczająco daleko, zaczynamy przesuwać
+                    }
+
+                    // console.table(item);
+                    // console.log("Item left:", index, textLeft);
+
+                    return (
                         <div
-                            className="media-item-text"
+                            id={item.id}
+                            key={`dropped-${index}`}
+                            className="media-item"
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, index)}
+                            onDragEnd={(e) => handleDragEnd(e, index)}
                             style={{
-                                position: "absolute",
-                                left: `${Math.min(
-                                    left + scrollLeft + 10,
-                                    item.duration * pixelsPerSecond * zoom -
-                                        textWidth -
-                                        10
-                                )}px`,
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                transition: "left 0.25s ease",
+                                backgroundColor:
+                                    trackType === "video"
+                                        ? "darkslateblue"
+                                        : "darkgreen",
+                                width: `${
+                                    item.duration * pixelsPerSecond * zoom
+                                }px`,
+                                borderColor:
+                                    trackType === "video"
+                                        ? "#241e45"
+                                        : "#084808",
+                                left: `${left}px`,
                             }}>
-                            {itemText}
+                            <div
+                                className="media-item-text"
+                                style={{
+                                    left: `${textLeft}px`,
+                                }}>
+                                {itemText}
+                            </div>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                })}
         </div>
     );
 };
 
 export default TimelineTrack;
-

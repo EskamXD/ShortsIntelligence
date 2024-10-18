@@ -17,6 +17,7 @@ const TimelineScale: React.FC<TimelineScaleProps> = ({
 }) => {
     return (
         <div
+            id="timeline-scale"
             className="timeline-scale d-flex"
             style={{ width: `${6000 * zoom}px` }}>
             {timelineScale.map((tick, index) => (

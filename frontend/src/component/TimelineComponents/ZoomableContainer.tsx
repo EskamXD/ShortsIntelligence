@@ -1,10 +1,8 @@
-import React, { useEffect, useRef, useState, ReactElement } from "react";
-import TimelineTrackContainer from "../TimelineComponents/TimelineTrackContainer";
+import React, { useEffect, useRef } from "react";
 import { useEditorContext } from "../../context/EditorContext";
 
 interface ZoomableContainerProps {
     children: React.ReactNode;
-    setMouseScrollOffset: React.Dispatch<React.SetStateAction<number>>;
     pixelsPerSecond: number;
     setScrollLeft: React.Dispatch<React.SetStateAction<number>>;
     localPlaybackPosition: number;
@@ -12,7 +10,6 @@ interface ZoomableContainerProps {
 
 const ZoomableContainer: React.FC<ZoomableContainerProps> = ({
     children,
-    setMouseScrollOffset,
     pixelsPerSecond,
     setScrollLeft,
     localPlaybackPosition,
@@ -20,6 +17,7 @@ const ZoomableContainer: React.FC<ZoomableContainerProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
 
     const { zoom, setZoom, timelinePanelWidth } = useEditorContext();
+    let localZoom = zoom;
 
     useEffect(() => {
         const container = containerRef.current;
@@ -27,6 +25,9 @@ const ZoomableContainer: React.FC<ZoomableContainerProps> = ({
 
         const handleWheel = (event: WheelEvent) => {
             event.preventDefault();
+            const container = containerRef.current;
+            if (!container) return;
+
             if (event.altKey) {
                 const mouseX =
                     event.clientX - container.getBoundingClientRect().left;
@@ -34,32 +35,30 @@ const ZoomableContainer: React.FC<ZoomableContainerProps> = ({
                 const percentPosition =
                     relativeMouseX / (timelinePanelWidth || 1);
 
-                const newZoom = zoom + event.deltaY * -0.001;
-                const clampedZoom = Math.min(Math.max(newZoom, 0.5), 10);
+                localZoom += event.deltaY * -0.002;
+                localZoom = Math.min(Math.max(localZoom, 0.5), 10);
+                const clampedZoom = localZoom;
+
                 const newTimelineWidth = 60 * pixelsPerSecond * clampedZoom;
                 const newScrollLeft =
                     percentPosition * newTimelineWidth - mouseX;
 
                 container.scrollLeft = newScrollLeft;
                 setScrollLeft(newScrollLeft);
-
                 setZoom(clampedZoom);
             } else {
                 container.scrollLeft += event.deltaY;
-                setMouseScrollOffset(event.deltaY);
                 setScrollLeft(container.scrollLeft);
             }
         };
 
         container.addEventListener("wheel", handleWheel);
         return () => container.removeEventListener("wheel", handleWheel);
-    }, [
-        setZoom,
-        setScrollLeft,
-        setMouseScrollOffset,
-        timelinePanelWidth,
-        pixelsPerSecond,
-    ]);
+    }, [setZoom, setScrollLeft, timelinePanelWidth, pixelsPerSecond]);
+
+    useEffect(() => {
+        localZoom = zoom; // Aktualizacja lokalnej zmiennej zoom po zmianie zoomu
+    }, [zoom]);
 
     // Nowy useEffect do śledzenia wskaźnika odtwarzania
     useEffect(() => {
@@ -99,4 +98,3 @@ const ZoomableContainer: React.FC<ZoomableContainerProps> = ({
 };
 
 export default ZoomableContainer;
-
