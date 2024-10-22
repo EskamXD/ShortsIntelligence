@@ -8,22 +8,29 @@ interface TimelineTrackContainerProps {
     pixelsPerSecond: number;
     scrollLeft: number;
     localPlaybackPosition: number;
+    handleMouseDown: (event: React.MouseEvent) => void;
 }
 
 const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
     pixelsPerSecond,
     scrollLeft,
     localPlaybackPosition,
+    handleMouseDown,
 }) => {
     const { timelineItems, setTimelineItems, zoom } = useEditorContext();
 
     useEffect(() => {
         // Sprawdzamy, czy aktualnie odtwarzane są elementy wideo
         timelineItems.forEach((item) => {
+            const itemStartPositionInPixels = item.leftOffset;
+            const itemEndPositionInPixels =
+                itemStartPositionInPixels + item.itemWidth;
+
             if (
-                localPlaybackPosition >= item.startPosition &&
-                localPlaybackPosition <= item.startPosition + item.duration
+                localPlaybackPosition >= itemStartPositionInPixels &&
+                localPlaybackPosition <= itemEndPositionInPixels
             ) {
+                // console.clear();
                 // console.log(`Playing video: ${item.name}`);
             }
         });
@@ -46,11 +53,10 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
             .slice(-1)[0];
 
         const leftOffset = lastTrackItem
-            ? lastTrackItem.leftOffset +
-              lastTrackItem.itemWidth / (pixelsPerSecond * zoom)
+            ? lastTrackItem.leftOffset + lastTrackItem.itemWidth
             : 0;
 
-        const startPosition = leftOffset * pixelsPerSecond * zoom;
+        const startPosition = leftOffset;
 
         const newItem = {
             id: id,
@@ -71,21 +77,25 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
         <div
             id="timeline-track-container"
             className="d-flex flex-column"
-            style={{ width: `${6000 * zoom}px` }}>
+            style={{ width: `${6000 * zoom}px` }}
+            onClick={handleMouseDown}>
             <TimelineTrack
                 trackType="video"
                 pixelsPerSecond={pixelsPerSecond}
                 scrollLeft={scrollLeft}
                 onFileProcessed={handleFileProcessed}
+                handleMouseDown={handleMouseDown}
             />
             <TimelineTrack
                 trackType="audio"
                 pixelsPerSecond={pixelsPerSecond}
                 scrollLeft={scrollLeft}
                 onFileProcessed={handleFileProcessed}
+                handleMouseDown={handleMouseDown}
             />
         </div>
     );
 };
 
 export default TimelineTrackContainer;
+

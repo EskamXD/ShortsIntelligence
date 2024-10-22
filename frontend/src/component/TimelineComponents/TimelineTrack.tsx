@@ -3,12 +3,13 @@ import { useEditorContext } from "../../context/EditorContext"; // Import kontek
 
 interface TimelineTrackProps {
     trackType: "video" | "audio";
-    pixelsPerSecond: number; // Piksele na sekundę
+    pixelsPerSecond: number;
     scrollLeft: number;
     onFileProcessed: (
         file: { name: string; duration: number },
         trackType: "video" | "audio"
-    ) => void; // Callback do przekazywania przetworzonych plików
+    ) => void;
+    handleMouseDown: (event: React.MouseEvent) => void;
 }
 
 const TimelineTrack: React.FC<TimelineTrackProps> = ({
@@ -16,14 +17,17 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
     pixelsPerSecond,
     scrollLeft,
     onFileProcessed,
+    // handleMouseDown,
 }) => {
-    const { zoom, files, timelinePanelWidth, timelineItems } =
-        useEditorContext(); // Pobieramy zoom i files z Contextu
-    const [isDragging, setIsDragging] = useState(false); // Stan przeciągania
-    const [isAltPressed, setIsAltPressed] = useState(false); // Nowy stan do śledzenia klawisza Alt
-    const textMeasureRef = useRef<HTMLDivElement | null>(null); // Referencja do elementu mierzącego szerokość tekstu
+    const { zoom, files, timelinePanelWidth, timelineItems, setTimelineItems } =
+        useEditorContext();
+    const [isDragging, setIsDragging] = useState(false);
+    const [draggedItemId, setDraggedItemId] = useState<string>("");
+    const [draggedPosition, setDraggedPosition] = useState<number>(0);
+    const [isAltPressed, setIsAltPressed] = useState(false);
+    const textMeasureRef = useRef<HTMLDivElement | null>(null);
+    const trackRef = useRef<HTMLDivElement | null>(null);
 
-    // Obsługa klawisza Alt
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.altKey) {
@@ -46,28 +50,196 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
         };
     }, []);
 
-    // useEffect(() => {
-    //     console.log(scrollLeft);
-    // }, [scrollLeft]);
-
-    // Funkcja snapowania (np. co 1 sekundę), z uwzględnieniem długości filmu
+    // Funkcja snapowania do najbliższego elementu (audio lub wideo)
     const snapToGrid = (position: number, itemWidth: number) => {
-        const snapInterval = pixelsPerSecond; // Przyciąganie co sekundę
-        const maxPosition = containerWidth - itemWidth; // Unikamy wyjścia poza oś czasu
+        // Zbieramy krawędzie wszystkich elementów na osi czasu
+        const allEdges: number[] = [];
 
-        const snappedPosition =
-            Math.round(position / snapInterval) * snapInterval;
-        return Math.min(snappedPosition, maxPosition); // Ograniczenie do szerokości osi
+        timelineItems.forEach((item) => {
+            const itemStart = item.leftOffset; // Początek elementu w pikselach
+            const itemEnd = item.leftOffset + item.itemWidth; // Koniec elementu w pikselach
+
+            // Dodajemy początek i koniec każdego elementu do listy krawędzi
+            allEdges.push(itemStart, itemEnd);
+        });
+
+        if (allEdges.length === 0) {
+            return position; // Brak elementów do przyciągnięcia, zwracamy pierwotną pozycję
+        }
+
+        // Znalezienie najbliższej krawędzi
+        let closestEdge = allEdges[0];
+        let minDistance = Math.abs(position - closestEdge);
+
+        allEdges.forEach((edge) => {
+            const distance = Math.abs(position - edge);
+            if (distance < minDistance) {
+                closestEdge = edge;
+                minDistance = distance;
+            }
+        });
+
+        // Upewniamy się, że element nie wychodzi poza oś czasu
+        const maxPosition = containerWidth - itemWidth; // Zapobiegamy wyjściu poza oś czasu
+        return Math.min(Math.max(closestEdge, 0), maxPosition); // Zwracamy najbliższą krawędź
     };
 
-    // Funkcje obsługujące przeciąganie elementu
-    const handleDragStart = (event: React.DragEvent, index: number) => {
-        event.dataTransfer.setData("index", index.toString()); // Przechowuje indeks elementu w trakcie przeciągania
+    const handleMouseDown = (event: React.MouseEvent, id: string) => {
+        console.log(
+            "Mouse down:",
+            id,
+            "Initial mouse position:",
+            event.clientX
+        );
+
+        setDraggedItemId(id); // Zapisujemy, który element jest przeciągany
+        setDraggedPosition(event.clientX); // Zapisujemy początkową pozycję myszy
+        setIsDragging(true); // Ustawienie stanu przeciągania
+
+        // Zaczynamy od aktualnej pozycji lewego offsetu przeciąganego elementu
+        const initialItem = timelineItems.find((item) => item.id === id);
+        if (!initialItem) return;
+
+        const initialLeftOffset = initialItem.leftOffset;
+
+        const handleMouseMove = (moveEvent: MouseEvent) => {
+            const newMousePosition = moveEvent.clientX; // Nowa pozycja myszy
+            const deltaX = newMousePosition - draggedPosition; // Obliczamy różnicę między starą a nową pozycją
+
+            console.log(
+                "Delta X:",
+                deltaX,
+                "New mouse position:",
+                newMousePosition,
+                "Old position:",
+                draggedPosition,
+                "Zoom:",
+                zoom
+            );
+
+            const newLeftOffset = initialLeftOffset + deltaX / zoom; // Obliczamy nową pozycję elementu
+            console.log(
+                "New left offset:",
+                newLeftOffset,
+                "Old left offset:",
+                initialLeftOffset
+            );
+
+            // Aktualizujemy pozycję elementu
+            const updatedTimelineItems = [...timelineItems];
+            const updatedItem = updatedTimelineItems.find(
+                (item) => item.id === id
+            );
+            if (updatedItem) {
+                updatedItem.leftOffset = newLeftOffset; // Zaktualizuj pozycję elementu
+                setTimelineItems(updatedTimelineItems); // Zaktualizuj stan osi czasu
+            }
+
+            setDraggedPosition(newMousePosition); // Zaktualizuj pozycję myszy
+        };
+
+        const handleMouseUp = () => {
+            console.log("Mouse up detected for:", id);
+            const item = timelineItems.find((item) => item.id === id);
+            if (!item) return;
+
+            // Snapowanie pozycji do siatki lub najbliższego elementu
+            const snappedLeftOffset = snapToGrid(
+                item.leftOffset,
+                item.itemWidth
+            );
+            console.log("Snapped position:", snappedLeftOffset);
+
+            // Aktualizacja pozycji po snapowaniu
+            const updatedTimelineItems = [...timelineItems];
+            const updatedItem = updatedTimelineItems.find(
+                (item) => item.id === id
+            );
+            if (updatedItem) {
+                updatedItem.leftOffset = snappedLeftOffset;
+                setTimelineItems(updatedTimelineItems);
+            }
+
+            setDraggedItemId(""); // Reset przeciągania
+            setIsDragging(false); // Koniec przeciągania
+
+            // Usuń nasłuchiwanie na ruch myszy
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
+        };
+
+        // Dodaj nasłuchiwanie na ruch myszy i zwolnienie przycisku
+        console.log("Adding mousemove and mouseup listeners for:", id);
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
+    };
+
+    // useEffect do nasłuchiwania mousedown po załadowaniu komponentu
+    useEffect(() => {
+        const trackContainer = trackRef.current;
+        if (!trackContainer) return;
+
+        // Funkcja do nasłuchiwania zdarzeń mousedown na wszystkich elementach tracka
+        const handleTrackMouseDown = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            const id = target.getAttribute("data-id"); // Przyjmujemy, że element ma atrybut `data-id`
+            if (id) {
+                handleMouseDown(event as unknown as React.MouseEvent, id);
+            }
+        };
+
+        // Dodaj listener na mousedown
+        trackContainer.addEventListener("mousedown", handleTrackMouseDown);
+
+        // Cleanup listenerów przy odmontowaniu komponentu
+        return () => {
+            trackContainer.removeEventListener(
+                "mousedown",
+                handleTrackMouseDown
+            );
+        };
+    }, [timelineItems, zoom]); // Dodajemy zależności, aby upewnić się, że aktualizacje są odświeżane
+
+    const handleDragStart = (event: React.DragEvent, id: string) => {
+        const ghostImage = document.createElement("div"); // Tworzymy pusty element
+        event.dataTransfer.setDragImage(ghostImage, 1, 1); // Ustawiamy "ghost image"
+        event.preventDefault(); // Zapobiegamy domyślnemu zachowaniu
+
+        // console.log("Drag start:", id);
+        // setDraggedItemId(id); // Zapisujemy, który element jest przeciągany
+        // setDraggedPosition(event.clientX); // Zapisujemy początkową pozycję
+        // setIsDragging(true); // Rozpoczęcie przeciągania
+    };
+
+    // Funkcja obsługująca przeciąganie
+    const handleDrag = (event: React.DragEvent) => {
+        if (draggedItemId !== "") {
+            // console.log("Dragging:", draggedItemId);
+            const item = timelineItems.filter(
+                (item) => item.id === draggedItemId
+            )[0];
+            if (!item) return;
+
+            const deltaX = (event.clientX - draggedPosition) / zoom / 4; // Różnica w pozycji X
+            const newLeftOffset = item.leftOffset + deltaX; // Nowy offset
+            console.log("item.leftOffset:", item.leftOffset, deltaX);
+            setDraggedPosition(event.clientX); // Aktualizacja pozycji przeciągania
+
+            // Aktualizujemy pozycję elementu na osi czasu podczas przeciągania
+            const updatedTimelineItems = [...timelineItems];
+            const updatedItem = updatedTimelineItems.find(
+                (item) => item.id === draggedItemId
+            );
+            if (updatedItem) {
+                updatedItem.leftOffset = newLeftOffset;
+                setTimelineItems(updatedTimelineItems);
+            }
+        }
     };
 
     const handleDragEnter = (event: React.DragEvent) => {
         event.preventDefault();
-        setIsDragging(true); // Ustawia stan przeciągania na true
+        setIsDragging(true);
     };
 
     const handleDragOver = (event: React.DragEvent) => {
@@ -75,24 +247,23 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
     };
 
     const handleDragLeave = () => {
-        setIsDragging(false); // Zmiana stanu przeciągania na false, gdy plik opuści obszar
+        setIsDragging(false);
     };
 
     const handleDrop = (event: React.DragEvent) => {
         event.preventDefault();
-        setIsDragging(false); // Reset stanu przeciągania
+        setIsDragging(false);
 
         const fileName = event.dataTransfer.getData("text/plain");
-        console.log("Dropped file name:", fileName);
+        // console.log("Dropped file name:", fileName);
 
         const file = files.find((file) => file.name === fileName);
         if (file) {
-            console.log("Dropped file:", file);
-            processFile(file); // Przetwarzanie pliku
+            // console.log("Dropped file:", file);
+            processFile(file);
         }
     };
 
-    // Funkcja do przetwarzania pliku, rozdzielająca wideo i audio
     const processFile = (file: File) => {
         if (file.type.startsWith("video/")) {
             const videoElement = document.createElement("video");
@@ -106,10 +277,8 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                     `Type: video, File: ${file.name}, Duration: ${duration}s, Width: ${widthInPixels}px`
                 );
 
-                // Dodanie pliku wideo
                 onFileProcessed({ name: file.name, duration }, "video");
 
-                // Po dodaniu wideo, sprawdźmy, czy ma audio
                 videoElement.onplay = () => {
                     const audioContext = new (window.AudioContext ||
                         (window as any).webkitAudioContext)();
@@ -118,7 +287,7 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
 
                     if (videoSource.mediaElement) {
                         console.log("Video has an audio track");
-                        // Dodanie audio, jeśli istnieje
+
                         onFileProcessed(
                             { name: `${file.name} (audio)`, duration },
                             "audio"
@@ -128,9 +297,7 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                     }
                 };
 
-                // Odtwórz wideo, aby aktywować `onplay` i przetworzyć audio
                 videoElement.play().then(() => {
-                    // Możesz zatrzymać wideo, jeśli nie chcesz go odtwarzać
                     videoElement.pause();
                 });
             };
@@ -146,7 +313,6 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                     `Type: audio, File: ${file.name}, Duration: ${duration}s, Width: ${widthInPixels}px`
                 );
 
-                // Dodanie pliku audio
                 onFileProcessed({ name: file.name, duration }, "audio");
             };
         } else {
@@ -154,9 +320,32 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
         }
     };
 
-    const handleDragEnd = (event: React.DragEvent, index: number) => {
-        setIsDragging(false); // Reset stanu przeciągania
-        console.log("Drag end:", index);
+    // Funkcja obsługująca zakończenie przeciągania
+    const handleDragEnd = (event: React.DragEvent, id: string) => {
+        if (draggedItemId !== "") {
+            const item = timelineItems.filter((item) => item.id === id)[0];
+            if (!item) return;
+
+            const snappedLeftOffset = snapToGrid(
+                item.leftOffset,
+                item.itemWidth
+            );
+
+            console.log("Drag end:", id, snappedLeftOffset);
+
+            // Aktualizujemy pozycję elementu zgodnie z siatką (snap to grid)
+            const updatedTimelineItems = [...timelineItems];
+            const updatedItem = updatedTimelineItems.find(
+                (item) => item.id === id
+            );
+            if (updatedItem) {
+                updatedItem.leftOffset = snappedLeftOffset;
+                setTimelineItems(updatedTimelineItems);
+            }
+
+            setDraggedItemId(""); // Reset przeciągania
+            setIsDragging(false); // Koniec przeciągania
+        }
     };
 
     const totalDuration = timelineItems.reduce(
@@ -194,6 +383,7 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
 
     return (
         <div
+            ref={trackRef}
             className="timeline-track"
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
@@ -223,7 +413,7 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                         30
                     )}`;
                     const textWidth = measureTextWidth(itemText);
-                    const left = item.leftOffset * pixelsPerSecond * zoom;
+                    const left = item.leftOffset * zoom;
 
                     // Obliczanie maksymalnej pozycji dla tekstu
                     const maxTextLeft =
@@ -237,15 +427,11 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                         !isAltPressed &&
                         left + 10 < scrollLeft + timelinePanelWidth
                     ) {
-                        // console.log("Item is visible:", index);
                         textLeft = Math.max(
                             10,
                             Math.min(scrollLeft + 10 - left, maxTextLeft)
-                        ); // Dopiero gdy przewiniemy wystarczająco daleko, zaczynamy przesuwać
+                        );
                     }
-
-                    // console.table(item);
-                    // console.log("Item left:", index, textLeft);
 
                     return (
                         <div
@@ -253,8 +439,10 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                             key={`dropped-${index}`}
                             className="media-item"
                             draggable
-                            onDragStart={(e) => handleDragStart(e, index)}
-                            onDragEnd={(e) => handleDragEnd(e, index)}
+                            onDragStart={(e) => handleDragStart(e, item.id)}
+                            onDrag={(e) => handleDrag(e)}
+                            onDragEnd={(e) => handleDragEnd(e, item.id)}
+                            onClick={(event) => handleMouseDown(event, item.id)}
                             style={{
                                 backgroundColor:
                                     trackType === "video"
@@ -268,6 +456,10 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                                         ? "#241e45"
                                         : "#084808",
                                 left: `${left}px`,
+                                opacity:
+                                    isDragging && draggedItemId === item.id
+                                        ? 0.5
+                                        : 1,
                             }}>
                             <div
                                 className="media-item-text"
@@ -284,3 +476,4 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
 };
 
 export default TimelineTrack;
+

@@ -169,8 +169,10 @@ const TimelinePanel: React.FC = () => {
                 window.addEventListener("mouseup", handleMouseUp);
             }
         };
-
-        window.addEventListener("mousedown", handleMouseDown);
+        zoomableContainerRef.current?.addEventListener(
+            "mousedown",
+            handleMouseDown
+        );
     };
 
     const handleTimelineMouseDown = useCallback(
@@ -203,8 +205,15 @@ const TimelinePanel: React.FC = () => {
                 }
             };
 
-            if (["playback-indicator", "timeline-scale"].includes(target.id)) {
+            console.log("terget:", target.id, "-", target.parentElement?.id);
+            if (
+                ["playback-indicator", "timeline-scale"].includes(target.id) &&
+                (target.id !== "timeline-track-container" ||
+                    target.parentElement?.id !== "timeline-track-container")
+            ) {
                 handleIndicatorDrag(event); // Inicjalizacja przeciągania
+            } else if (target.id === "timeline-track-container") {
+                // Do nothing
             } else {
                 handleMediaItemClick(target);
             }
@@ -301,16 +310,17 @@ const TimelinePanel: React.FC = () => {
                         pixelsPerSecond={pixelsPerSecond}
                         handleMouseDown={handleTimelineMouseDown}
                     />
-
-                    <TimelineTrackContainer
-                        pixelsPerSecond={pixelsPerSecond}
-                        scrollLeft={scrollLeft}
-                        localPlaybackPosition={localPlaybackPosition}
-                    />
                 </div>
+                <TimelineTrackContainer
+                    pixelsPerSecond={pixelsPerSecond}
+                    scrollLeft={scrollLeft}
+                    localPlaybackPosition={localPlaybackPosition}
+                    handleMouseDown={handleTimelineMouseDown}
+                />
             </ZoomableContainer>
         </div>
     );
 };
 
 export default TimelinePanel;
+

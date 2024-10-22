@@ -1,9 +1,10 @@
 export interface TrackItem {
-    id: string;
-    type: "video" | "audio";
-    name: string;
-    duration: number;
-    leftOffset: number; // Pozycja elementu na osi czasu
-    itemWidth: number; // Szerokość elementu w pikselach
-    startPosition: number;
+    id: string; // Unique identifier UUIDv4
+    type: "video" | "audio"; // Item type
+    name: string; // Item name
+    duration: number; // Item duration in seconds
+    itemWidth: number; // Item width in pixels
+    leftOffset: number; // Item left offset in pixels
+    startPosition: number; // Item start position in pixels
 }
+
