@@ -5,6 +5,11 @@ import ZoomableContainer from "../TimelineComponents/ZoomableContainer";
 import TimelineTrackContainer from "../TimelineComponents/TimelineTrackContainer";
 import { useEditorContext } from "../../context/EditorContext";
 
+import MouseIcon from "@mui/icons-material/Mouse";
+import ContentCutIcon from "@mui/icons-material/ContentCut";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { ButtonGroup, ToggleButton } from "react-bootstrap";
+
 const TimelinePanel: React.FC = () => {
     const {
         files,
@@ -25,6 +30,7 @@ const TimelinePanel: React.FC = () => {
     const [localPlaybackPosition, setLocalPlaybackPosition] =
         useState(playbackPosition);
     const [selectedMediaItem, setSelectedMediaItem] = useState<string>("");
+    const [toolValue, setToolValue] = useState("mouse");
 
     const timelinePanelRef = useRef<HTMLDivElement>(null);
     const requestRef = useRef<number | null>(null);
@@ -273,6 +279,27 @@ const TimelinePanel: React.FC = () => {
         )}`;
     };
 
+    const toolbar = [
+        {
+            value: "mouse",
+            component: <MouseIcon />,
+            onClick: () => {
+                console.log("Mouse");
+                setToolValue("mouse");
+            },
+            tooltip: "Mouse",
+        },
+        {
+            value: "cut",
+            component: <ContentCutIcon />,
+            onClick: () => {
+                console.log("Cut");
+                setToolValue("cut");
+            },
+            tooltip: "Cut",
+        },
+    ];
+
     return (
         <div
             ref={timelinePanelRef}
@@ -282,6 +309,25 @@ const TimelinePanel: React.FC = () => {
                 localPlaybackPosition,
                 30
             )}`}</div>
+            <div
+                className="d-flex flex-column gap-3 align-center"
+                // style={{ width: "60px" }}
+            >
+                <ButtonGroup vertical>
+                    {toolbar.map((tool, index) => (
+                        <ToggleButton
+                            key={index}
+                            id={`${tool.value}-button`}
+                            type="radio"
+                            value={tool.value}
+                            // variant="secondary"
+                            checked={toolValue === tool.value}
+                            onClick={tool.onClick}>
+                            {tool.component}
+                        </ToggleButton>
+                    ))}
+                </ButtonGroup>
+            </div>
 
             <ZoomableContainer
                 pixelsPerSecond={pixelsPerSecond}
