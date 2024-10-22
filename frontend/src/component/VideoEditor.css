@@ -130,11 +130,14 @@
 
 .timeline-panel-container {
     position: relative;
+    width: calc(60vw - 4rem);
+    display: flex;
+    flex-direction: row;
 }
 .current-time {
     position: absolute;
     top: 0;
-    left: 0;
+    left: 60px;
     padding: 5px;
     color: #2d8ceb;
     z-index: 100;

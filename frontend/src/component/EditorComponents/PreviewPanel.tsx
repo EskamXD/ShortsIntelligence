@@ -3,9 +3,12 @@ import { useEditorContext } from "../../context/EditorContext";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
 import StopIcon from "@mui/icons-material/Stop";
+import VolumeOffIcon from "@mui/icons-material/VolumeOff";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 
 const PreviewPanel: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const [isMuted, setIsMuted] = useState(false);
 
     const {
         files,
@@ -125,6 +128,13 @@ const PreviewPanel: React.FC = () => {
         }
     };
 
+    const switchSound = () => {
+        if (videoRef.current) {
+            videoRef.current.muted = !videoRef.current.muted;
+            setIsMuted(videoRef.current.muted);
+        }
+    };
+
     return (
         <div className="preview-panel">
             <video ref={videoRef}>
@@ -139,6 +149,9 @@ const PreviewPanel: React.FC = () => {
                 </button>
                 <button onClick={stopVideo}>
                     <StopIcon />
+                </button>
+                <button onClick={switchSound}>
+                    {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
                 </button>
             </div>
         </div>
