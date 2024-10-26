@@ -71,6 +71,9 @@ const App: React.FC = () => {
                 display: "flex",
                 userSelect: "none",
                 WebkitUserSelect: "none",
+                MozUserSelect: "none",
+                msUserSelect: "none",
+                height: "100vh",
             }}>
             {!isEditorOn ? (
                 <>

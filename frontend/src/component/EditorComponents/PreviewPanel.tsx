@@ -6,9 +6,48 @@ import StopIcon from "@mui/icons-material/Stop";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 
+/**
+ * `PreviewPanel` - React Component
+ *
+ * The `PreviewPanel` component provides a custom video player interface with playback controls
+ * for previewing video files within a media editor application. The player supports play/pause,
+ * stop, mute/unmute, and dynamically switches between high and low-quality video streams during
+ * user interactions.
+ *
+ * @component
+ * @example
+ * // Usage
+ * import PreviewPanel from './PreviewPanel';
+ *
+ * function App() {
+ *   return (
+ *     <div>
+ *       <h1>Video Preview</h1>
+ *       <PreviewPanel />
+ *     </div>
+ *   );
+ * }
+ *
+ * export default App;
+ *
+ * @requires useEditorContext
+ * @requires useRef
+ * @requires useState
+ * @requires useEffect
+ * @requires PlayArrowIcon
+ * @requires PauseIcon
+ * @requires StopIcon
+ * @requires VolumeOffIcon
+ * @requires VolumeUpIcon
+ */
 const PreviewPanel: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isMuted, setIsMuted] = useState(false);
+    const [hasTriggered, setHasTriggered] = useState("");
+    const [previewItems, setPreviewItems] = useState<
+        { id: string; file: File; startPosition: number; endPosition: number }[]
+    >([]);
+    const [localPlaybackPosition, setLocalPlaybackPosition] = useState(0);
 
     const {
         files,
@@ -21,113 +60,178 @@ const PreviewPanel: React.FC = () => {
         setVideoURL,
         halfQualityVideoURL, // Dodane źródło niskiej jakości
         timelineItems,
+        pixelsPerSecond,
     } = useEditorContext();
 
+    /**
+     * Prepare array of video files for playback, based on the timeline items left offsets.
+     */
     useEffect(() => {
-        if (timelineItems.length > 0) {
-            const matchedFile = files.find(
-                (file) => file.name === timelineItems[0].name
-            );
+        setPreviewItems([]);
+        const videoFiles = timelineItems.filter(
+            (item) => item.type === "video"
+        );
 
-            if (matchedFile) {
-                const tempUrl = URL.createObjectURL(matchedFile); // Tworzymy URL z pliku
-                setVideoURL(tempUrl);
+        videoFiles.forEach((item) => {
+            const file = files.find((file) => file.name === item.name);
+            if (file) {
+                setPreviewItems((prev) => [
+                    ...prev,
+                    {
+                        id: item.id,
+                        file: file,
+                        startPosition: item.leftOffset,
+                        endPosition: item.leftOffset + item.itemWidth,
+                    },
+                ]);
             }
-        }
+        });
+
+        // console.log("Preview items:", previewItems);
     }, [timelineItems, files, setVideoURL]);
 
+    /**
+     * Preview update after playback position change.
+     */
     useEffect(() => {
-        console.log(isDragingPlaybackIndicator);
-    }, [isDragingPlaybackIndicator]);
-
-    useEffect(() => {
-        if (isDragingPlaybackIndicator && videoRef.current) {
-            let animationFrameId: number;
-
-            const updateCurrentTime = () => {
-                // Sprawdzamy, czy przeciąganie wskaźnika nadal trwa
-                if (!isDragingPlaybackIndicator) {
-                    cancelAnimationFrame(animationFrameId);
-                    return;
-                }
-
-                if (videoRef.current) {
-                    // Ustawiamy niską jakość podczas przeciągania
-                    if (
-                        videoRef.current.src !== halfQualityVideoURL &&
-                        halfQualityVideoURL
-                    ) {
-                        videoRef.current.src = halfQualityVideoURL;
-                    }
-
-                    videoRef.current.currentTime = playbackPosition;
+        if (playbackPosition && !isDragingPlaybackIndicator) {
+            setLocalPlaybackPosition(playbackPosition);
+            const playbackPositionPx = playbackPosition * pixelsPerSecond;
+            // console.log(
+            //     "Playback position:",
+            //     playbackPosition,
+            //     playbackPositionPx
+            // );
+            previewItems.forEach((item) => {
+                if (
+                    playbackPositionPx >= item.startPosition &&
+                    playbackPositionPx <= item.endPosition
+                ) {
                     // console.log(
-                    //     "Dragging playback indicator (with requestAnimationFrame and low quality)",
-                    //     isDragingPlaybackIndicator
+                    //     "Playing video:",
+                    //     item.file.name,
+                    //     item.startPosition,
+                    //     item.endPosition
                     // );
+                    // create a new URL for the video file and set video.current.time to the correct position
+                    const fileURL = URL.createObjectURL(item.file);
+                    setVideoURL(fileURL);
+                    if (videoRef.current) {
+                        videoRef.current.currentTime =
+                            playbackPosition - item.startPosition;
+                    }
+                } else {
+                    setVideoURL("");
                 }
-
-                animationFrameId = requestAnimationFrame(updateCurrentTime);
-            };
-
-            // Używamy requestAnimationFrame do aktualizacji currentTime
-            animationFrameId = requestAnimationFrame(updateCurrentTime);
-
-            return () => cancelAnimationFrame(animationFrameId);
+            });
         }
-    }, [playbackPosition, isDragingPlaybackIndicator, halfQualityVideoURL]);
+    }, [playbackPosition, isDragingPlaybackIndicator]);
 
     useEffect(() => {
-        if (!isDragingPlaybackIndicator && videoRef.current && videoURL) {
-            // Po zakończeniu przeciągania wracamy do wysokiej jakości
-            if (videoRef.current.src !== videoURL) {
-                videoRef.current.src = videoURL;
-                videoRef.current.currentTime = playbackPosition;
-                // console.log("Switching back to high quality");
+        let foundInRange = false;
+
+        previewItems.forEach((item) => {
+            if (
+                localPlaybackPosition * pixelsPerSecond >= item.startPosition &&
+                localPlaybackPosition * pixelsPerSecond <= item.endPosition
+            ) {
+                foundInRange = true;
+                if (hasTriggered !== item.id) {
+                    setHasTriggered(item.id);
+                    const fileURL = URL.createObjectURL(item.file);
+                    console.log("Playing video:", item.file.name);
+
+                    if (videoRef.current) {
+                        videoRef.current.src = fileURL;
+                        videoRef.current.currentTime =
+                            localPlaybackPosition -
+                            item.startPosition / pixelsPerSecond;
+
+                        if (isPlaying) {
+                            videoRef.current.play();
+                        }
+                    }
+                }
             }
-        }
-    }, [isDragingPlaybackIndicator]);
+        });
 
+        // Jeśli `localPlaybackPosition` nie jest w zakresie żadnego `previewItem`, ustaw `videoURL` na pusty string
+        if (!foundInRange) {
+            if (videoRef.current) {
+                videoRef.current.src = "";
+            }
+            setHasTriggered(""); // Zresetuj `hasTriggered`, aby pozwolić na ponowne odtwarzanie, gdy wróci do zakresu
+        }
+    }, [localPlaybackPosition, previewItems, isPlaying]);
+
+    // Animation loop for playback position when isPlaying is true
     useEffect(() => {
-        if (!isPlaying && videoURL && videoRef.current) {
-            videoRef.current.src = videoURL;
-            videoRef.current.currentTime = playbackPosition;
-            // console.log("Setting video source and playback position");
-        }
-    }, [videoURL]);
+        let animationFrameId: number | null = null;
+        let previousTime: number | null = null;
 
-    useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.currentTime = playbackPosition;
-            // console.log("Setting playback position");
-        }
-    }, [playbackPosition]);
+        const updatePlaybackPosition = (currentTime: number) => {
+            if (previousTime != null && isPlaying) {
+                const deltaTime = (currentTime - previousTime) / 1000; // czas w sekundach
+                setLocalPlaybackPosition(
+                    (prevPosition) => prevPosition + deltaTime
+                );
+            }
+            previousTime = currentTime;
+            animationFrameId = requestAnimationFrame(updatePlaybackPosition);
+        };
 
-    // Funkcja play/pause
+        if (isPlaying) {
+            animationFrameId = requestAnimationFrame(updatePlaybackPosition);
+            setHasTriggered(""); // Reset trigger on play
+        } else if (animationFrameId != null) {
+            previousTime = null;
+            cancelAnimationFrame(animationFrameId);
+        }
+
+        return () => {
+            if (animationFrameId != null) {
+                cancelAnimationFrame(animationFrameId);
+            }
+        };
+    }, [isPlaying]);
+
+    /**
+     * Toggles play and pause of the video.
+     * @function
+     */
     const togglePlayPause = () => {
-        if (videoRef.current) {
-            if (isPlaying) {
-                videoRef.current.pause();
-                // console.log("Pausing video");
-            } else {
-                videoRef.current.play();
-                // console.log("Playing video");
-            }
-            setIsPlaying(!isPlaying);
+        if (isPlaying) {
+            setIsPlaying(false);
+            if (videoRef.current && videoURL) videoRef.current.pause();
+            setHasTriggered("");
+            // console.log("Pausing video");
+        } else {
+            setIsPlaying(true);
+            if (videoRef.current && videoURL) videoRef.current.play();
+            // console.log("Playing video");
         }
+        setIsPlaying(!isPlaying);
     };
 
-    // Funkcja zatrzymania odtwarzania
+    /**
+     * Stops the video, resets the `currentTime` to 0, and sets `playbackPosition` to 0.
+     * @function
+     */
     const stopVideo = () => {
         if (videoRef.current) {
+            console.log("Stopping video");
             videoRef.current.pause();
-            videoRef.current.currentTime = 0;
+            setLocalPlaybackPosition(0);
             setPlaybackPosition(0);
             setIsPlaying(false);
             // console.log("Stopping video");
         }
     };
 
+    /**
+     * Toggles the mute state of the video.
+     * @function
+     */
     const switchSound = () => {
         if (videoRef.current) {
             videoRef.current.muted = !videoRef.current.muted;
@@ -137,10 +241,18 @@ const PreviewPanel: React.FC = () => {
 
     return (
         <div className="preview-panel">
-            <video ref={videoRef}>
-                <source src={videoURL || ""} type="video/mp4" />
-                Your browser does not support the video tag.
-            </video>
+            <div className="preview-panel-video-placeholder">
+                <video ref={videoRef} className="black-screen">
+                    {videoURL ? (
+                        <source src={videoURL || ""} type="video/mp4" />
+                    ) : (
+                        <>
+                            Your browser does not support the video tag.
+                            <div className="black-screen"></div>
+                        </>
+                    )}
+                </video>
+            </div>
 
             {/* Niestandardowe kontrolki */}
             <div className="custom-controls">

@@ -2,32 +2,36 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 import { TrackItem } from "../interfaces";
 
 interface EditorContextType {
-    files: File[];
-    videoURL: string | null;
-    halfQualityVideoURL: string | null;
-    quarterQualityVideoURL: string | null;
     effects: string[];
-    subtitles: string;
-    playbackPosition: number;
-    isPlaying: boolean;
+    files: File[];
+    halfQualityVideoURL: string | null;
     isDragingPlaybackIndicator: boolean;
-    zoom: number;
-    timelinePanelWidth: number;
+    isPlaying: boolean;
+    pixelsPerSecond: number;
+    playbackPosition: number;
+    quarterQualityVideoURL: string | null;
+    subtitles: string;
     timelineItems: TrackItem[];
-    setFiles: (files: File[]) => void;
-    setVideoURL: (url: string | null) => void;
-    setHalfQualityVideoURL: (url: string | null) => void;
-    setQuarterQualityVideoURL: (url: string | null) => void;
+    timelinePanelWidth: number;
+    timelineTrackContainerWidthPx: number;
+    videoURL: string | null;
+    zoom: number;
     setEffects: (effects: string[]) => void;
-    setSubtitles: (subtitles: string) => void;
-    setPlaybackPosition: (position: number) => void;
-    setIsPlaying: (isPlaying: boolean) => void;
+    setFiles: (files: File[]) => void;
+    setHalfQualityVideoURL: (url: string | null) => void;
     setIsDragingPlaybackIndicator: (
         isDragingPlaybackIndicator: boolean
     ) => void;
-    setZoom: (zoom: number) => void;
-    setTimelinePanelWidth: (width: number) => void;
+    setIsPlaying: (isPlaying: boolean) => void;
+    setPixelsPerSecond: (pixelsPerSecond: number) => void;
+    setPlaybackPosition: (position: number) => void;
+    setQuarterQualityVideoURL: (url: string | null) => void;
+    setSubtitles: (subtitles: string) => void;
     setTimelineItems: React.Dispatch<React.SetStateAction<TrackItem[]>>;
+    setTimelinePanelWidth: (width: number) => void;
+    setTimeLineTrackContainerWidthPx: (width: number) => void;
+    setVideoURL: (url: string | null) => void;
+    setZoom: (zoom: number) => void;
 }
 
 interface EditorProviderProps {
@@ -49,49 +53,56 @@ export const useEditorContext = () => {
 
 // Provider kontekstu
 export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
+    const [effects, setEffects] = useState<string[]>([]);
     const [files, setFiles] = useState<File[]>([]);
-    const [videoURL, setVideoURL] = useState<string | null>(null);
     const [halfQualityVideoURL, setHalfQualityVideoURL] = useState<
         string | null
     >(null);
+    const [isDragingPlaybackIndicator, setIsDragingPlaybackIndicator] =
+        useState<boolean>(false);
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    const [pixelsPerSecond, setPixelsPerSecond] = useState<number>(100);
+    const [playbackPosition, setPlaybackPosition] = useState<number>(0);
     const [quarterQualityVideoURL, setQuarterQualityVideoURL] = useState<
         string | null
     >(null);
-    const [effects, setEffects] = useState<string[]>([]);
     const [subtitles, setSubtitles] = useState<string>("");
-    const [playbackPosition, setPlaybackPosition] = useState<number>(0);
-    const [isPlaying, setIsPlaying] = useState<boolean>(false);
-    const [isDragingPlaybackIndicator, setIsDragingPlaybackIndicator] =
-        useState<boolean>(false);
-    const [zoom, setZoom] = useState<number>(1.0);
-    const [timelinePanelWidth, setTimelinePanelWidth] = useState<number>(0);
     const [timelineItems, setTimelineItems] = useState<TrackItem[]>([]);
+    const [timelinePanelWidth, setTimelinePanelWidth] = useState<number>(0);
+    const [timelineTrackContainerWidthPx, setTimeLineTrackContainerWidthPx] =
+        useState<number>(6000);
+    const [videoURL, setVideoURL] = useState<string | null>(null);
+    const [zoom, setZoom] = useState<number>(1.0);
 
     const value = {
-        files,
-        videoURL,
-        halfQualityVideoURL,
-        quarterQualityVideoURL,
         effects,
-        subtitles,
-        playbackPosition,
-        isPlaying,
+        files,
+        halfQualityVideoURL,
         isDragingPlaybackIndicator,
-        zoom,
-        timelinePanelWidth,
+        isPlaying,
+        pixelsPerSecond,
+        playbackPosition,
+        quarterQualityVideoURL,
+        subtitles,
         timelineItems,
-        setFiles,
-        setVideoURL,
-        setHalfQualityVideoURL,
-        setQuarterQualityVideoURL,
+        timelinePanelWidth,
+        timelineTrackContainerWidthPx,
+        videoURL,
+        zoom,
         setEffects,
-        setSubtitles,
-        setPlaybackPosition,
-        setIsPlaying,
+        setFiles,
+        setHalfQualityVideoURL,
         setIsDragingPlaybackIndicator,
-        setZoom,
-        setTimelinePanelWidth,
+        setIsPlaying,
+        setPixelsPerSecond,
+        setPlaybackPosition,
+        setQuarterQualityVideoURL,
+        setSubtitles,
         setTimelineItems,
+        setTimelinePanelWidth,
+        setTimeLineTrackContainerWidthPx,
+        setVideoURL,
+        setZoom,
     };
 
     return (

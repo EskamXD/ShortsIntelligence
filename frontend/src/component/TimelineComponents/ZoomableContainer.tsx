@@ -16,7 +16,13 @@ const ZoomableContainer: React.FC<ZoomableContainerProps> = ({
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const { zoom, setZoom, timelinePanelWidth } = useEditorContext();
+    const {
+        zoom,
+        setZoom,
+        timelinePanelWidth,
+        setTimeLineTrackContainerWidthPx,
+        timelineItems,
+    } = useEditorContext();
     let localZoom = zoom;
 
     useEffect(() => {
@@ -29,23 +35,33 @@ const ZoomableContainer: React.FC<ZoomableContainerProps> = ({
             if (!container) return;
 
             if (event.altKey) {
-                const mouseX =
-                    event.clientX - container.getBoundingClientRect().left;
-                const relativeMouseX = mouseX + container.scrollLeft;
-                const percentPosition =
-                    relativeMouseX / (timelinePanelWidth || 1);
+                return;
+                // const mouseX =
+                //     event.clientX - container.getBoundingClientRect().left;
+                // const relativeMouseX = mouseX + container.scrollLeft;
+                // const percentPosition =
+                //     relativeMouseX / (timelinePanelWidth || 1);
 
-                localZoom += event.deltaY * -0.002;
-                localZoom = Math.min(Math.max(localZoom, 0.5), 10);
-                const clampedZoom = localZoom;
+                // localZoom += event.deltaY * -0.002;
+                // localZoom = Math.min(Math.max(localZoom, 0.5), 10);
+                // const clampedZoom = localZoom;
 
-                const newTimelineWidth = 60 * pixelsPerSecond * clampedZoom;
-                const newScrollLeft =
-                    percentPosition * newTimelineWidth - mouseX;
+                // const newTimelineWidth = 60 * pixelsPerSecond * clampedZoom; // Tutaj jest do zmiany wartość 60 na ruchomą
+                // const newScrollLeft =
+                //     percentPosition * newTimelineWidth - mouseX;
 
-                container.scrollLeft = newScrollLeft;
-                setScrollLeft(newScrollLeft);
-                setZoom(clampedZoom);
+                // container.scrollLeft = newScrollLeft;
+                // setScrollLeft(newScrollLeft);
+                // setZoom(clampedZoom);
+                // setTimeLineTrackContainerWidthPx(newTimelineWidth);
+
+                // const timelineItemsCopy = [...timelineItems];
+                // timelineItemsCopy.forEach((item) => {
+                //     item.itemWidth =
+                //         item.duration * pixelsPerSecond * clampedZoom;
+                //     item.leftOffset =
+                //         item.startPosition * pixelsPerSecond * clampedZoom;
+                // });
             } else {
                 container.scrollLeft += event.deltaY;
                 setScrollLeft(container.scrollLeft);

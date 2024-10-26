@@ -17,7 +17,8 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
     localPlaybackPosition,
     handleMouseDown,
 }) => {
-    const { timelineItems, setTimelineItems, zoom } = useEditorContext();
+    const { timelineTrackContainerWidthPx, timelineItems, setTimelineItems } =
+        useEditorContext();
 
     useEffect(() => {
         // Sprawdzamy, czy aktualnie odtwarzane są elementy wideo
@@ -46,7 +47,7 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
         //generate unique id for new item
         const id = uuidv4();
 
-        const itemWidth = file.duration * pixelsPerSecond * zoom;
+        const itemWidth = file.duration * pixelsPerSecond;
 
         const lastTrackItem = timelineItems
             .filter((item) => item.type === trackType)
@@ -77,7 +78,7 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
         <div
             id="timeline-track-container"
             className="d-flex flex-column"
-            style={{ width: `${6000 * zoom}px` }}
+            style={{ width: `${timelineTrackContainerWidthPx}px` }}
             onClick={handleMouseDown}>
             <TimelineTrack
                 trackType="video"
@@ -98,4 +99,3 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
 };
 
 export default TimelineTrackContainer;
-

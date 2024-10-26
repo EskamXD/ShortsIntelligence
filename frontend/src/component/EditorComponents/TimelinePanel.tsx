@@ -7,7 +7,6 @@ import { useEditorContext } from "../../context/EditorContext";
 
 import MouseIcon from "@mui/icons-material/Mouse";
 import ContentCutIcon from "@mui/icons-material/ContentCut";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { ButtonGroup, ToggleButton } from "react-bootstrap";
 
 const TimelinePanel: React.FC = () => {
@@ -24,6 +23,7 @@ const TimelinePanel: React.FC = () => {
         setTimelinePanelWidth,
         timelineItems,
         setTimelineItems,
+        pixelsPerSecond,
     } = useEditorContext();
 
     const [scrollLeft, setScrollLeft] = useState(0);
@@ -37,7 +37,6 @@ const TimelinePanel: React.FC = () => {
     const lastUpdateRef = useRef<number>(Date.now());
     const zoomableContainerRef = useRef<HTMLDivElement>(null);
 
-    const pixelsPerSecond = 100;
     const timelineLengthInSeconds = 60;
 
     // Obsługa klawisza Delete do usunięcia wybranego elementu
@@ -150,7 +149,7 @@ const TimelinePanel: React.FC = () => {
             const rect = zoomableContainerRef.current!.getBoundingClientRect();
             const mouseX = clientX - rect.left;
             const newPlaybackPosition = Math.min(
-                Math.max(mouseX / (pixelsPerSecond * zoom), 0),
+                Math.max(mouseX / pixelsPerSecond, 0),
                 timelineLengthInSeconds
             );
 
@@ -229,7 +228,6 @@ const TimelinePanel: React.FC = () => {
         [
             zoomableContainerRef,
             pixelsPerSecond,
-            zoom,
             timelineLengthInSeconds,
             setIsPlaying,
             setPlaybackPosition,
@@ -245,9 +243,11 @@ const TimelinePanel: React.FC = () => {
 
     const generateTimelineScale = () => {
         const timelineScale = [];
-        const majorTickInterval =
-            zoom >= 4 ? 1 : zoom >= 3 ? 2 : zoom >= 2 ? 5 : 10;
-        const minorTickDensity = zoom >= 4 ? 10 : 5;
+        // const majorTickInterval =
+        //     zoom >= 4 ? 1 : zoom >= 3 ? 2 : zoom >= 2 ? 5 : 10;
+        // const minorTickDensity = zoom >= 4 ? 10 : 5;
+        const majorTickInterval = 3;
+        const minorTickDensity = 5;
 
         for (let i = 0; i <= timelineLengthInSeconds; i += majorTickInterval) {
             timelineScale.push({
@@ -318,6 +318,7 @@ const TimelinePanel: React.FC = () => {
                 localPlaybackPosition,
                 30
             )}`}</div>
+            <div className="current-zoom">{`Zoom: ${zoom.toFixed(2)}`}</div>
             <div
                 className="d-flex flex-column gap-3 align-center"
                 // style={{ width: "60px" }}
@@ -346,13 +347,11 @@ const TimelinePanel: React.FC = () => {
                     <PlaybackIndicator
                         localPlaybackPosition={localPlaybackPosition}
                         pixelsPerSecond={pixelsPerSecond}
-                        zoom={zoom}
                         handleMouseDown={handleTimelineMouseDown}
                     />
 
                     <TimelineScale
                         timelineScale={timelineScale}
-                        zoom={zoom}
                         pixelsPerSecond={pixelsPerSecond}
                         handleMouseDown={handleTimelineMouseDown}
                     />
@@ -369,4 +368,3 @@ const TimelinePanel: React.FC = () => {
 };
 
 export default TimelinePanel;
-
