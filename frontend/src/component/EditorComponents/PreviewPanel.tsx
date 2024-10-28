@@ -6,175 +6,114 @@ import StopIcon from "@mui/icons-material/Stop";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 
-/**
- * `PreviewPanel` - React Component
- *
- * The `PreviewPanel` component provides a custom video player interface with playback controls
- * for previewing video files within a media editor application. The player supports play/pause,
- * stop, mute/unmute, and dynamically switches between high and low-quality video streams during
- * user interactions.
- *
- * @component
- * @example
- * // Usage
- * import PreviewPanel from './PreviewPanel';
- *
- * function App() {
- *   return (
- *     <div>
- *       <h1>Video Preview</h1>
- *       <PreviewPanel />
- *     </div>
- *   );
- * }
- *
- * export default App;
- *
- * @requires useEditorContext
- * @requires useRef
- * @requires useState
- * @requires useEffect
- * @requires PlayArrowIcon
- * @requires PauseIcon
- * @requires StopIcon
- * @requires VolumeOffIcon
- * @requires VolumeUpIcon
- */
 const PreviewPanel: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const localPlaybackPositionRef = useRef(0); // Ref for latest playback position
     const [isMuted, setIsMuted] = useState(false);
     const [hasTriggered, setHasTriggered] = useState("");
-    const [previewItems, setPreviewItems] = useState<
-        { id: string; file: File; startPosition: number; endPosition: number }[]
-    >([]);
     const [localPlaybackPosition, setLocalPlaybackPosition] = useState(0);
+    const videoBlobURLs = useRef(new Map<string, string>());
 
     const {
-        files,
         playbackPosition,
         setPlaybackPosition,
         isPlaying,
         setIsPlaying,
-        isDragingPlaybackIndicator,
         videoURL,
         setVideoURL,
-        halfQualityVideoURL, // Dodane źródło niskiej jakości
         timelineItems,
         pixelsPerSecond,
     } = useEditorContext();
 
-    /**
-     * Prepare array of video files for playback, based on the timeline items left offsets.
-     */
-    useEffect(() => {
-        setPreviewItems([]);
-        const videoFiles = timelineItems.filter(
-            (item) => item.type === "video"
-        );
-
-        videoFiles.forEach((item) => {
-            const file = files.find((file) => file.name === item.name);
-            if (file) {
-                setPreviewItems((prev) => [
-                    ...prev,
-                    {
-                        id: item.id,
-                        file: file,
-                        startPosition: item.leftOffset,
-                        endPosition: item.leftOffset + item.itemWidth,
-                    },
-                ]);
-            }
-        });
-
-        // console.log("Preview items:", previewItems);
-    }, [timelineItems, files, setVideoURL]);
+    const getVideoBlobURL = (file: File, itemId: string): string => {
+        if (!videoBlobURLs.current.has(itemId)) {
+            const blob = new Blob([file], { type: file.type || "video/mp4" });
+            const url = URL.createObjectURL(blob);
+            videoBlobURLs.current.set(itemId, url);
+        }
+        return videoBlobURLs.current.get(itemId) as string;
+    };
 
     /**
-     * Preview update after playback position change.
+     * Sync `localPlaybackPosition` with `playbackPosition` changes.
      */
     useEffect(() => {
-        if (playbackPosition && !isDragingPlaybackIndicator) {
+        if (videoRef.current) {
+            videoRef.current.pause();
             setLocalPlaybackPosition(playbackPosition);
-            const playbackPositionPx = playbackPosition * pixelsPerSecond;
-            // console.log(
-            //     "Playback position:",
-            //     playbackPosition,
-            //     playbackPositionPx
-            // );
-            previewItems.forEach((item) => {
-                if (
-                    playbackPositionPx >= item.startPosition &&
-                    playbackPositionPx <= item.endPosition
-                ) {
-                    // console.log(
-                    //     "Playing video:",
-                    //     item.file.name,
-                    //     item.startPosition,
-                    //     item.endPosition
-                    // );
-                    // create a new URL for the video file and set video.current.time to the correct position
-                    const fileURL = URL.createObjectURL(item.file);
-                    setVideoURL(fileURL);
-                    if (videoRef.current) {
-                        videoRef.current.currentTime =
-                            playbackPosition - item.startPosition;
-                    }
-                } else {
-                    setVideoURL("");
-                }
-            });
         }
-    }, [playbackPosition, isDragingPlaybackIndicator]);
+    }, [playbackPosition]);
+
+    /**
+     * Update videoURL and set currentTime for videoRef based on playbackPosition.
+     */
+    useEffect(() => {
+        const playbackPositionPx = localPlaybackPosition * pixelsPerSecond;
+        const videoItem = timelineItems.find(
+            (item) =>
+                item.type === "video" &&
+                playbackPositionPx >= item.startPosition &&
+                playbackPositionPx <= item.endPosition
+        );
+        // console.log("Video item:", videoItem);
+
+        if (videoItem && hasTriggered !== videoItem.id) {
+            const fileURL = getVideoBlobURL(videoItem.file, videoItem.id);
+            if (videoURL !== fileURL) {
+                // console.log("Setting video URL:", fileURL);
+                setVideoURL(fileURL);
+            }
+            setHasTriggered(videoItem.id);
+
+            if (videoRef.current) {
+                if (videoRef.current.src !== fileURL) {
+                    // console.log("Setting video source:", fileURL);
+                    videoRef.current.src = fileURL;
+                }
+                videoRef.current.load();
+
+                const videoCurrentTime =
+                    playbackPosition -
+                    videoItem.startPosition / pixelsPerSecond +
+                    videoItem.startTime;
+                // console.log("Setting video currentTime:", videoCurrentTime);
+                videoRef.current.currentTime = videoCurrentTime;
+
+                if (isPlaying) {
+                    videoRef.current.play().catch((error) => {
+                        console.error("Error playing video:", error);
+                    });
+                }
+            }
+        } else if (!videoItem && videoRef.current) {
+            // console.log(
+            //     "Setting video URL to null",
+            //     videoItem,
+            //     videoRef.current
+            // );
+            videoRef.current.src = "";
+            videoRef.current.currentTime = 0;
+            setVideoURL(null);
+            setHasTriggered("");
+        }
+    }, [localPlaybackPosition, pixelsPerSecond, timelineItems]);
 
     useEffect(() => {
-        let foundInRange = false;
+        localPlaybackPositionRef.current = localPlaybackPosition; // Sync ref with state
+    }, [localPlaybackPosition]);
 
-        previewItems.forEach((item) => {
-            if (
-                localPlaybackPosition * pixelsPerSecond >= item.startPosition &&
-                localPlaybackPosition * pixelsPerSecond <= item.endPosition
-            ) {
-                foundInRange = true;
-                if (hasTriggered !== item.id) {
-                    setHasTriggered(item.id);
-                    const fileURL = URL.createObjectURL(item.file);
-                    console.log("Playing video:", item.file.name);
-
-                    if (videoRef.current) {
-                        videoRef.current.src = fileURL;
-                        videoRef.current.currentTime =
-                            localPlaybackPosition -
-                            item.startPosition / pixelsPerSecond;
-
-                        if (isPlaying) {
-                            videoRef.current.play();
-                        }
-                    }
-                }
-            }
-        });
-
-        // Jeśli `localPlaybackPosition` nie jest w zakresie żadnego `previewItem`, ustaw `videoURL` na pusty string
-        if (!foundInRange) {
-            if (videoRef.current) {
-                videoRef.current.src = "";
-            }
-            setHasTriggered(""); // Zresetuj `hasTriggered`, aby pozwolić na ponowne odtwarzanie, gdy wróci do zakresu
-        }
-    }, [localPlaybackPosition, previewItems, isPlaying]);
-
-    // Animation loop for playback position when isPlaying is true
+    /**
+     * Animation loop to update playback position when isPlaying is true.
+     */
     useEffect(() => {
         let animationFrameId: number | null = null;
         let previousTime: number | null = null;
 
         const updatePlaybackPosition = (currentTime: number) => {
             if (previousTime != null && isPlaying) {
-                const deltaTime = (currentTime - previousTime) / 1000; // czas w sekundach
-                setLocalPlaybackPosition(
-                    (prevPosition) => prevPosition + deltaTime
-                );
+                const deltaTime = (currentTime - previousTime) / 1000;
+                localPlaybackPositionRef.current += deltaTime;
+                setLocalPlaybackPosition(localPlaybackPositionRef.current);
             }
             previousTime = currentTime;
             animationFrameId = requestAnimationFrame(updatePlaybackPosition);
@@ -182,7 +121,7 @@ const PreviewPanel: React.FC = () => {
 
         if (isPlaying) {
             animationFrameId = requestAnimationFrame(updatePlaybackPosition);
-            setHasTriggered(""); // Reset trigger on play
+            setHasTriggered("");
         } else if (animationFrameId != null) {
             previousTime = null;
             cancelAnimationFrame(animationFrameId);
@@ -195,43 +134,32 @@ const PreviewPanel: React.FC = () => {
         };
     }, [isPlaying]);
 
-    /**
-     * Toggles play and pause of the video.
-     * @function
-     */
+    useEffect(() => {
+        return () => {
+            videoBlobURLs.current.forEach((url) => URL.revokeObjectURL(url));
+            videoBlobURLs.current.clear();
+        };
+    }, []);
+
     const togglePlayPause = () => {
         if (isPlaying) {
             setIsPlaying(false);
             if (videoRef.current && videoURL) videoRef.current.pause();
             setHasTriggered("");
-            // console.log("Pausing video");
         } else {
             setIsPlaying(true);
-            if (videoRef.current && videoURL) videoRef.current.play();
-            // console.log("Playing video");
         }
-        setIsPlaying(!isPlaying);
     };
 
-    /**
-     * Stops the video, resets the `currentTime` to 0, and sets `playbackPosition` to 0.
-     * @function
-     */
     const stopVideo = () => {
         if (videoRef.current) {
-            console.log("Stopping video");
             videoRef.current.pause();
-            setLocalPlaybackPosition(0);
-            setPlaybackPosition(0);
-            setIsPlaying(false);
-            // console.log("Stopping video");
         }
+        setPlaybackPosition(0);
+        setLocalPlaybackPosition(0);
+        setIsPlaying(false);
     };
 
-    /**
-     * Toggles the mute state of the video.
-     * @function
-     */
     const switchSound = () => {
         if (videoRef.current) {
             videoRef.current.muted = !videoRef.current.muted;
@@ -242,19 +170,17 @@ const PreviewPanel: React.FC = () => {
     return (
         <div className="preview-panel">
             <div className="preview-panel-video-placeholder">
-                <video ref={videoRef} className="black-screen">
-                    {videoURL ? (
+                {videoURL !== undefined ? (
+                    <video ref={videoRef} className="black-screen">
                         <source src={videoURL || ""} type="video/mp4" />
-                    ) : (
-                        <>
-                            Your browser does not support the video tag.
-                            <div className="black-screen"></div>
-                        </>
-                    )}
-                </video>
+                    </video>
+                ) : (
+                    <div
+                        className="black-screen"
+                        style={{ backgroundColor: "red" }}></div>
+                )}
             </div>
 
-            {/* Niestandardowe kontrolki */}
             <div className="custom-controls">
                 <button onClick={togglePlayPause}>
                     {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}

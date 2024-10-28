@@ -52,3 +52,48 @@ export const postProject = async (projectData: ProjectData): Promise<void> => {
 export const deleteProject = async (id: string): Promise<void> => {
     await apiClient.delete(`projects/${id}/`);
 };
+
+export const getVideoMetadata = async (
+    file: File
+): Promise<{
+    fps: number;
+    duration: number;
+    total_frames: number;
+}> => {
+    const formData = new FormData();
+    formData.append("video", file);
+
+    const response = await apiClient.post("get_video_fps/", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+
+    console.table(response.data);
+    return response.data;
+};
+
+export const processVideo = async (
+    videoFile: File,
+    startTime: number,
+    endTime: number,
+    resolution: string,
+    enhanceAudio: boolean,
+    addSubtitles: boolean
+): Promise<{ video_url: string; subtitles_url?: string }> => {
+    const formData = new FormData();
+    formData.append("video", videoFile);
+    formData.append("start_time", startTime.toString());
+    formData.append("end_time", endTime.toString());
+    formData.append("resolution", resolution);
+    formData.append("enhance_audio", enhanceAudio.toString());
+    formData.append("add_subtitles", addSubtitles.toString());
+
+    const response = await apiClient.post("process-video/", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+
+    return response.data;
+};

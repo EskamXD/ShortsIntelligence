@@ -1,10 +1,11 @@
 export interface TrackItem {
     id: string; // Unique identifier UUIDv4
     type: "video" | "audio"; // Item type
+    file: File; // Item file
     name: string; // Item name
-    duration: number; // Item duration in seconds
-    itemWidth: number; // Item width in pixels
-    leftOffset: number; // Item left offset in pixels
-    startPosition: number; // Item start position in pixels
+    durationInS: number; // Item duration in seconds
+    durationInPx: number; // Item width in pixels
+    startPosition: number; // Item start position on timeline in pixels
+    startTime: number; // Start time of item itself in seconds
+    endPosition: number; // Item end position on timeline in pixels
 }
-

@@ -1,10 +1,17 @@
 // App.tsx
 import React, { useState, useEffect } from "react";
+import {
+    BrowserRouter as Router,
+    Routes,
+    Route,
+    useNavigate,
+} from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Card from "react-bootstrap/Card";
 import StartProject from "./component/StartProject";
 import VideoEditor from "./component/VideoEditor"; // Import VideoEditor
+import NewAIProject from "./component/NewAIProject.tsx"; // Import NewAIProject
 import { getProjects } from "./api/apiService"; // Upewnij się, że ścieżka jest poprawna
 import "./App.css";
 import { EditorProvider } from "./context/EditorContext";
@@ -24,6 +31,7 @@ const App: React.FC = () => {
     const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
         null
     ); // Przechowywanie ID wybranego projektu
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchRecentProjects();

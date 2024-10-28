@@ -8,17 +8,15 @@ import { useEditorContext } from "../../context/EditorContext";
 import MouseIcon from "@mui/icons-material/Mouse";
 import ContentCutIcon from "@mui/icons-material/ContentCut";
 import { ButtonGroup, ToggleButton } from "react-bootstrap";
+import { formatTime } from "../utils/timeUtils";
 
 const TimelinePanel: React.FC = () => {
     const {
-        files,
         playbackPosition,
         setPlaybackPosition,
         isPlaying,
         setIsPlaying,
         setIsDragingPlaybackIndicator,
-        setVideoURL,
-        subtitles,
         zoom,
         setTimelinePanelWidth,
         timelineItems,
@@ -272,21 +270,6 @@ const TimelinePanel: React.FC = () => {
     };
 
     const timelineScale = generateTimelineScale();
-
-    const formatTime = (timeInSeconds: number, fps: number) => {
-        const hours = Math.floor(timeInSeconds / 3600);
-        const minutes = Math.floor((timeInSeconds % 3600) / 60);
-        const seconds = Math.floor(timeInSeconds % 60);
-        const frames = Math.floor((timeInSeconds % 1) * fps);
-
-        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-            2,
-            "0"
-        )}:${String(seconds).padStart(2, "0")}:${String(frames).padStart(
-            2,
-            "0"
-        )}`;
-    };
 
     const toolbar = [
         {

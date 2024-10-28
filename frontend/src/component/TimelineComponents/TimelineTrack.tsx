@@ -1,24 +1,20 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useEditorContext } from "../../context/EditorContext"; // Import kontekstu
 import Draggable, { DraggableEvent } from "react-draggable";
+import { formatTime } from "../utils/timeUtils";
 
 interface TimelineTrackProps {
     trackType: "video" | "audio";
     pixelsPerSecond: number;
     scrollLeft: number;
-    onFileProcessed: (
-        file: { name: string; duration: number },
-        trackType: "video" | "audio"
-    ) => void;
-    handleMouseDown: (event: React.MouseEvent) => void;
+    handleFileProcessing: (file: File) => void;
 }
 
 const TimelineTrack: React.FC<TimelineTrackProps> = ({
     trackType,
     pixelsPerSecond,
     scrollLeft,
-    onFileProcessed,
-    // handleMouseDown,
+    handleFileProcessing,
 }) => {
     const {
         files,
@@ -35,7 +31,6 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
     const trackRef = useRef<HTMLDivElement | null>(null);
 
     const handleDragStart = (event: DraggableEvent, data: any, id: string) => {
-        console.log("Drag start x:", data.x);
         setDraggedPosition(data.x);
         setIsDragging(true);
         setDraggedItemId(id);
@@ -50,19 +45,28 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
         }
 
         const dataXdifference = data.x - draggedPosition;
-        let newLeftOffset = item.leftOffset + dataXdifference;
+        let newStartPosition = item.startPosition + dataXdifference;
 
         if (
-            dataXdifference + item.leftOffset + item.itemWidth >
+            dataXdifference + item.startPosition + item.durationInPx >
             timelineTrackContainerWidthPx
         ) {
-            newLeftOffset = timelineTrackContainerWidthPx - item.itemWidth - 3;
-        } else if (dataXdifference + item.leftOffset < 0) {
-            newLeftOffset = 0;
+            newStartPosition =
+                timelineTrackContainerWidthPx - item.durationInPx - 3;
+        } else if (dataXdifference + item.startPosition < 0) {
+            newStartPosition = 0;
         }
 
+        let newEndPosition = newStartPosition + item.durationInPx;
+
         const newItems = timelineItems.map((item) =>
-            item.id === id ? { ...item, leftOffset: newLeftOffset } : item
+            item.id === id
+                ? {
+                      ...item,
+                      startPosition: newStartPosition,
+                      endPosition: newEndPosition,
+                  }
+                : item
         );
 
         setTimelineItems(newItems);
@@ -89,55 +93,15 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
         setIsDraggingOver(false);
 
         const fileName = event.dataTransfer.getData("text/plain");
-
         const file = files.find((file) => file.name === fileName);
+
         if (file) {
-            processFile(file);
-        }
-    };
-
-    const processFile = (file: File) => {
-        if (file.type.startsWith("video/")) {
-            const videoElement = document.createElement("video");
-            videoElement.src = URL.createObjectURL(file);
-
-            videoElement.onloadedmetadata = () => {
-                const duration = videoElement.duration;
-
-                onFileProcessed({ name: file.name, duration }, "video");
-
-                videoElement.onplay = () => {
-                    const audioContext = new (window.AudioContext ||
-                        (window as any).webkitAudioContext)();
-                    const videoSource =
-                        audioContext.createMediaElementSource(videoElement);
-
-                    if (videoSource.mediaElement) {
-                        onFileProcessed(
-                            { name: `${file.name} (audio)`, duration },
-                            "audio"
-                        );
-                    }
-                };
-
-                videoElement.play().then(() => {
-                    videoElement.pause();
-                });
-            };
-        } else if (file.type.startsWith("audio/")) {
-            const audioElement = document.createElement("audio");
-            audioElement.src = URL.createObjectURL(file);
-
-            audioElement.onloadedmetadata = () => {
-                const duration = audioElement.duration;
-
-                onFileProcessed({ name: file.name, duration }, "audio");
-            };
+            handleFileProcessing(file); // Use the processFile prop
         }
     };
 
     const totalDuration = timelineItems.reduce(
-        (sum, item) => sum + item.duration,
+        (sum, item) => sum + item.durationInS,
         0
     );
 
@@ -152,21 +116,6 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
             return width;
         }
         return 0;
-    };
-
-    const formatTime = (timeInSeconds: number, fps: number) => {
-        const hours = Math.floor(timeInSeconds / 3600);
-        const minutes = Math.floor((timeInSeconds % 3600) / 60);
-        const seconds = Math.floor(timeInSeconds % 60);
-        const frames = Math.floor((timeInSeconds % 1) * fps);
-
-        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-            2,
-            "0"
-        )}:${String(seconds).padStart(2, "0")}:${String(frames).padStart(
-            2,
-            "0"
-        )}`;
     };
 
     return (
@@ -199,13 +148,13 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                 .filter((item) => item.type === trackType)
                 .map((item, index) => {
                     const itemText = `${item.name} - ${formatTime(
-                        item.duration,
+                        item.durationInS,
                         30
                     )}`;
                     const textWidth = measureTextWidth(itemText);
-                    const left = item.leftOffset;
+                    const left = item.startPosition;
 
-                    const maxTextLeft = item.itemWidth - textWidth - 10;
+                    const maxTextLeft = item.startPosition - textWidth - 10;
 
                     let textLeft = 10;
                     if (left + 10 < scrollLeft + timelinePanelWidth) {
@@ -236,9 +185,7 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                                         trackType === "video"
                                             ? "darkslateblue"
                                             : "darkgreen",
-                                    width: `${
-                                        item.duration * pixelsPerSecond
-                                    }px`,
+                                    width: `${item.durationInPx}px`,
                                     borderColor:
                                         trackType === "video"
                                             ? "#241e45"

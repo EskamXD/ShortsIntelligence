@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import TimelineTrack from "../TimelineComponents/TimelineTrack";
 import { useEditorContext } from "../../context/EditorContext";
 import { v4 as uuidv4 } from "uuid";
@@ -14,64 +14,80 @@ interface TimelineTrackContainerProps {
 const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
     pixelsPerSecond,
     scrollLeft,
-    localPlaybackPosition,
     handleMouseDown,
 }) => {
     const { timelineTrackContainerWidthPx, timelineItems, setTimelineItems } =
         useEditorContext();
 
-    useEffect(() => {
-        // Sprawdzamy, czy aktualnie odtwarzane są elementy wideo
-        timelineItems.forEach((item) => {
-            const itemStartPositionInPixels = item.leftOffset;
-            const itemEndPositionInPixels =
-                itemStartPositionInPixels + item.itemWidth;
-
-            if (
-                localPlaybackPosition >= itemStartPositionInPixels &&
-                localPlaybackPosition <= itemEndPositionInPixels
-            ) {
-                // console.clear();
-                // console.log(`Playing video: ${item.name}`);
-            }
-        });
-    }, [localPlaybackPosition, timelineItems]);
-
-    // Funkcja do obsługi przetwarzania plików
-    const handleFileProcessed = (
-        file: { name: string; duration: number },
-        trackType: "video" | "audio"
-    ) => {
-        console.log(`File processed: ${file.name}`);
-
-        //generate unique id for new item
+    const handleFileProcessing = (file: File) => {
         const id = uuidv4();
-
-        const itemWidth = file.duration * pixelsPerSecond;
-
         const lastTrackItem = timelineItems
-            .filter((item) => item.type === trackType)
+            .filter(
+                (item) =>
+                    item.type ===
+                    (file.type.startsWith("video/") ? "video" : "audio")
+            )
             .slice(-1)[0];
 
-        const leftOffset = lastTrackItem
-            ? lastTrackItem.leftOffset + lastTrackItem.itemWidth
-            : 0;
+        const processDurationAndAddItem = (
+            duration: number,
+            trackType: "video" | "audio"
+        ) => {
+            const durationInPx = duration * pixelsPerSecond;
+            const startPosition = lastTrackItem
+                ? lastTrackItem.startPosition + lastTrackItem.durationInPx
+                : 0;
 
-        const startPosition = leftOffset;
+            const newItem: TrackItem = {
+                id,
+                type: trackType,
+                file,
+                name:
+                    trackType === "audio" ? `${file.name} (audio)` : file.name,
+                durationInS: duration,
+                durationInPx,
+                startPosition,
+                startTime: 0,
+                endPosition: startPosition + durationInPx,
+            };
 
-        const newItem = {
-            id: id,
-            type: trackType,
-            name: file.name,
-            duration: file.duration,
-            leftOffset,
-            itemWidth,
-            startPosition,
-        } as TrackItem;
+            console.log("Adding new item to timeline:", newItem);
+            setTimelineItems((prevItems: TrackItem[]) => [
+                ...prevItems,
+                newItem,
+            ]);
+        };
 
-        // push new item to timelineItems
-        console.log("Adding new item to timeline:", newItem);
-        setTimelineItems((prevItems: TrackItem[]) => [...prevItems, newItem]);
+        if (file.type.startsWith("video/")) {
+            const videoElement = document.createElement("video");
+            videoElement.src = URL.createObjectURL(file);
+
+            videoElement.onloadedmetadata = () => {
+                const duration = videoElement.duration;
+                processDurationAndAddItem(duration, "video");
+
+                videoElement.onplay = () => {
+                    const audioContext = new (window.AudioContext ||
+                        (window as any).webkitAudioContext)();
+                    const videoSource =
+                        audioContext.createMediaElementSource(videoElement);
+
+                    if (videoSource.mediaElement) {
+                        processDurationAndAddItem(duration, "audio");
+                    }
+                };
+
+                videoElement.play().then(() => videoElement.pause());
+            };
+        } else if (file.type.startsWith("audio/")) {
+            const audioElement = document.createElement("audio");
+            audioElement.src = URL.createObjectURL(file);
+
+            audioElement.onloadedmetadata = () => {
+                const duration = audioElement.duration;
+                processDurationAndAddItem(duration, "audio");
+            };
+        }
     };
 
     return (
@@ -84,15 +100,13 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
                 trackType="video"
                 pixelsPerSecond={pixelsPerSecond}
                 scrollLeft={scrollLeft}
-                onFileProcessed={handleFileProcessed}
-                handleMouseDown={handleMouseDown}
+                handleFileProcessing={handleFileProcessing}
             />
             <TimelineTrack
                 trackType="audio"
                 pixelsPerSecond={pixelsPerSecond}
                 scrollLeft={scrollLeft}
-                onFileProcessed={handleFileProcessed}
-                handleMouseDown={handleMouseDown}
+                handleFileProcessing={handleFileProcessing}
             />
         </div>
     );
