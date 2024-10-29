@@ -9,7 +9,7 @@ export const formatTime = (timeInSeconds: number, fps: number) => {
         seconds
     ).padStart(2, "0")}:${String(frames).padStart(2, "0")}`;
 
-    console.log("Return value:", returnValue);
+    // console.log("Return value:", returnValue);
 
     return returnValue;
 };

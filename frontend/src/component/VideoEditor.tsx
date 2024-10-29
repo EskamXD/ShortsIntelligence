@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { Nav, Tab } from "react-bootstrap";
 import EffectsPanel from "./EditorComponents/EffectsPanel";
 import AudioPanel from "./EditorComponents/AudioPanel";
@@ -8,8 +9,20 @@ import FileToolsPanel from "./EditorComponents/FileToolsPanel";
 import TimelinePanel from "./EditorComponents/TimelinePanel";
 
 import "./VideoEditor.css";
+import { useEditorContext } from "../context/EditorContext";
 
 const VideoEditor: React.FC = () => {
+    const { setProjectID } = useEditorContext();
+
+    const { projectID } = useParams<{ projectID: string }>();
+
+    useEffect(() => {
+        console.log("Project ID:", projectID);
+        if (projectID) {
+            setProjectID(parseInt(projectID));
+        }
+    }, [projectID]);
+
     return (
         <div className="video-editor">
             <div className="editor-top">
@@ -36,16 +49,19 @@ const VideoEditor: React.FC = () => {
                                 </Nav.Item>
                             </Nav>
                         </div>
-                        <div>
-                            <Tab.Content>
+                        <div style={{ height: "100%" }}>
+                            <Tab.Content style={{ height: "100%" }}>
                                 <Tab.Pane eventKey="effect-panel">
                                     {/* <EffectsPanel /> */}
                                 </Tab.Pane>
                                 <Tab.Pane eventKey="audio-panel">
                                     {/* <AudioPanel /> */}
                                 </Tab.Pane>
-                                <Tab.Pane eventKey="subtitle-panel">
+                                <Tab.Pane
+                                    eventKey="subtitle-panel"
+                                    style={{ height: "100%" }}>
                                     {/* <SubtitlesPanel /> */}
+                                    <SubtitlesPanel />
                                 </Tab.Pane>
                             </Tab.Content>
                         </div>
@@ -62,4 +78,3 @@ const VideoEditor: React.FC = () => {
 };
 
 export default VideoEditor;
-

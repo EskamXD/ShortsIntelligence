@@ -1,20 +1,14 @@
 // App.tsx
 import React, { useState, useEffect } from "react";
-import {
-    BrowserRouter as Router,
-    Routes,
-    Route,
-    useNavigate,
-} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Card from "react-bootstrap/Card";
 import StartProject from "./component/StartProject";
-import VideoEditor from "./component/VideoEditor"; // Import VideoEditor
-import NewAIProject from "./component/NewAIProject.tsx"; // Import NewAIProject
+import { useEditorContext } from "./context/EditorContext";
+
 import { getProjects } from "./api/apiService"; // Upewnij się, że ścieżka jest poprawna
 import "./App.css";
-import { EditorProvider } from "./context/EditorContext";
 
 interface Project {
     id: number;
@@ -23,14 +17,20 @@ interface Project {
 }
 
 const App: React.FC = () => {
+    let context;
+    try {
+        context = useEditorContext();
+    } catch (error) {
+        console.error("Error using EditorContext:", error);
+        return null;
+    }
+
+    const { projectID, setProjectID } = context;
+
     const [recentProjects, setRecentProjects] = useState<Project[]>([]);
-    // const [isCreatingProject, setIsCreatingProject] = useState<boolean>(false);
     const [showNewProjectModal, setShowNewProjectModal] =
         useState<boolean>(false);
-    const [isEditorOn, setIsEditorOn] = useState<boolean>(false);
-    const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
-        null
-    ); // Przechowywanie ID wybranego projektu
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -39,7 +39,7 @@ const App: React.FC = () => {
 
     const fetchRecentProjects = async () => {
         try {
-            const projects = await getProjects(); // Używamy funkcji z apiService
+            const projects = await getProjects();
             setRecentProjects(projects);
         } catch (error) {
             console.error("Error fetching recent projects:", error);
@@ -54,8 +54,8 @@ const App: React.FC = () => {
 
     const handleRecentProjectClick = (project: Project) => {
         console.log("Open project:", project);
-        setIsEditorOn(true); // Włączenie edytora projektu
-        setSelectedProjectId(project.id); // Ustawienie ID wybranego projektu
+        setProjectID(project.id);
+        navigate(`/editor/${project.id}`);
     };
 
     const handleNewProjectModalClose = () => {
@@ -64,13 +64,8 @@ const App: React.FC = () => {
 
     const handleProjectCreated = () => {
         setShowNewProjectModal(false);
-        fetchRecentProjects(); // Odświeżenie listy projektów
-        setIsEditorOn(true); // Włączenie edytora projektu
-    };
-
-    const handleEditorClose = () => {
-        setIsEditorOn(false);
-        setSelectedProjectId(null); // Reset ID wybranego projektu
+        fetchRecentProjects();
+        navigate(`/editor/${projectID}`);
     };
 
     return (
@@ -83,37 +78,32 @@ const App: React.FC = () => {
                 msUserSelect: "none",
                 height: "100vh",
             }}>
-            {!isEditorOn ? (
-                <>
-                    <div
-                        style={{
-                            width: "200px",
-                            padding: "20px",
-                            borderRight: "1px solid #ccc",
-                        }}>
-                        <h2 style={{ textAlign: "left" }}>Project Actions</h2>
-                        <div className="d-grid gap-2">
-                            <Button
-                                onClick={handleCreateProjectClick}
-                                className="mb-3">
-                                New Project
-                            </Button>
-                            <Button onClick={handleOpenProjectClick}>
-                                Open Project
-                            </Button>
-                        </div>
-                    </div>
-                    <div style={{ flex: 1, padding: "20px" }}>
-                        <div>
-                            <h2>Recently Opened Projects</h2>
-                            {recentProjects.map((project) => (
+            <div
+                style={{
+                    width: "200px",
+                    padding: "20px",
+                    borderRight: "1px solid #ccc",
+                }}>
+                <h2 style={{ textAlign: "left" }}>Project Actions</h2>
+                <div className="d-grid gap-2">
+                    <Button onClick={handleCreateProjectClick} className="mb-3">
+                        New Project
+                    </Button>
+                    <Button onClick={handleOpenProjectClick}>
+                        Open Project
+                    </Button>
+                </div>
+            </div>
+            <div style={{ flex: 1, padding: "20px" }}>
+                <div>
+                    <h2>Recently Opened Projects</h2>
+                    <div className="d-flex gap-3 flex-wrap">
+                        {recentProjects.map((project, index) => {
+                            // if (index > 3) return null;
+                            return (
                                 <Card
                                     key={project.id}
                                     style={{ width: "18rem" }}>
-                                    <Card.Img
-                                        variant="top"
-                                        src="holder.js/100px180"
-                                    />
                                     <Card.Body>
                                         <Card.Title>{project.title}</Card.Title>
                                         <Card.Text>
@@ -130,27 +120,21 @@ const App: React.FC = () => {
                                         </Button>
                                     </Card.Body>
                                 </Card>
-                            ))}
-                        </div>
+                            );
+                        })}
                     </div>
-                    <Modal
-                        show={showNewProjectModal}
-                        onHide={handleNewProjectModalClose}>
-                        <Modal.Header closeButton>
-                            <Modal.Title>Start a New Project</Modal.Title>
-                        </Modal.Header>
-                        <Modal.Body>
-                            <StartProject
-                                onProjectCreated={handleProjectCreated}
-                            />
-                        </Modal.Body>
-                    </Modal>
-                </>
-            ) : (
-                <EditorProvider>
-                    <VideoEditor />
-                </EditorProvider>
-            )}
+                </div>
+            </div>
+            <Modal
+                show={showNewProjectModal}
+                onHide={handleNewProjectModalClose}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Start a New Project</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <StartProject onProjectCreated={handleProjectCreated} />
+                </Modal.Body>
+            </Modal>
         </div>
     );
 };

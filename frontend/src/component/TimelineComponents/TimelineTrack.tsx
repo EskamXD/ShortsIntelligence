@@ -95,6 +95,8 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
         const fileName = event.dataTransfer.getData("text/plain");
         const file = files.find((file) => file.name === fileName);
 
+        console.log("Dropped file:", fileName, file);
+
         if (file) {
             handleFileProcessing(file); // Use the processFile prop
         }

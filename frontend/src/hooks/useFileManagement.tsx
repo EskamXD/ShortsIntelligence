@@ -1,77 +1,93 @@
-import { useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useEditorContext } from "../context/EditorContext";
+import { uploadFileToBackend, fetchExistingFiles } from "../api/apiService";
 
 export const useFileManagement = () => {
-    const { files, setFiles } = useEditorContext();
-    const [inputKey, setInputKey] = useState(0); // Aby resetować input
+    const { files, setFiles, projectID } = useEditorContext();
+    const [inputKey, setInputKey] = useState(0);
+    const [uploading, setUploading] = useState(false);
 
-    // Dodaj wiele plików
+    const handleFetchExistingFiles = useCallback(async () => {
+        try {
+            const files: File[] = await fetchExistingFiles(projectID);
+
+            setFiles(files);
+        } catch (error) {
+            console.error("Error fetching existing files:", error);
+        }
+    }, [projectID, setFiles]);
+
+    useEffect(() => {
+        handleFetchExistingFiles();
+    }, [fetchExistingFiles, projectID]);
+
     const addFiles = useCallback(
-        (newFiles: File[]) => {
-            // Logujemy każdy plik
-            newFiles.forEach((file) => {
-                console.log("Próba dodania pliku:", file.name);
-            });
+        async (newFiles: File[]) => {
+            setUploading(true);
+            const uploadedFiles: File[] = [];
 
-            // Filtrujemy nowe pliki, aby dodać tylko te, które jeszcze nie istnieją
-            const filesToAdd = newFiles.filter(
-                (file) => !files.some((f) => f.name === file.name)
-            );
+            for (const file of newFiles) {
+                if (
+                    !file.type.startsWith("video/") &&
+                    !file.type.startsWith("audio/")
+                ) {
+                    console.warn("Skipped non-media file:", file.name);
+                    continue;
+                }
 
-            if (filesToAdd.length > 0) {
-                // Tworzymy nową tablicę z istniejącymi plikami i nowymi plikami
-                const updatedFiles = [...files, ...filesToAdd];
-                setFiles(updatedFiles);
-
-                filesToAdd.forEach((file) => {
-                    console.log("Dodano plik:", file.name);
-                });
-
-                setInputKey((prevKey) => prevKey + 1); // Reset input po dodaniu pliku
-            } else {
-                console.log(
-                    "Żaden nowy plik nie został dodany. Wszystkie pliki już istnieją."
-                );
+                const fileExists = files.some((f) => f.name === file.name);
+                if (!fileExists) {
+                    const fileUrl: string = await uploadFileToBackend(
+                        file,
+                        projectID
+                    );
+                    if (fileUrl) {
+                        uploadedFiles.push(file);
+                        console.log("Added file:", file.name, "URL:", fileUrl);
+                    }
+                }
             }
+
+            setFiles([...files, ...uploadedFiles]);
+            setUploading(false);
+            setInputKey((prevKey) => prevKey + 1); // Reset input after adding files
         },
         [files, setFiles]
     );
 
-    // Usuń plik
     const removeFile = useCallback(
         (fileName: string) => {
-            console.log("Próba usunięcia pliku:", fileName);
-            // Tworzymy nową tablicę z usuniętym plikiem
+            console.log("Attempting to delete file:", fileName);
             const newFiles = files.filter((file) => file.name !== fileName);
             setFiles(newFiles);
-            console.log("Plik usunięty:", fileName, newFiles);
-            setInputKey((prevKey) => prevKey + 1); // Reset input po usunięciu pliku
+            setInputKey((prevKey) => prevKey + 1); // Reset input after deleting
         },
         [files, setFiles]
     );
 
-    // Obsługa przeciągania i upuszczania plików
     const handleDrop = useCallback(
         (event: React.DragEvent) => {
             event.preventDefault();
 
-            // Pobieramy wszystkie pliki przeciągnięte do obszaru
             const droppedFiles = event.dataTransfer.files;
             if (droppedFiles.length > 0) {
-                // Konwertujemy FileList do tablicy i przekazujemy do addFiles
-                const filesArray = Array.from(droppedFiles);
+                const filesArray = Array.from(droppedFiles).filter(
+                    (file) =>
+                        file.type.startsWith("video/") ||
+                        file.type.startsWith("audio/")
+                );
+
                 console.log(
                     "Przeciągnięto pliki:",
                     filesArray.map((file) => file.name)
                 );
 
-                addFiles(filesArray); // Dodajemy wszystkie pliki naraz
+                addFiles(filesArray);
             }
 
-            // Resetuj dataTransfer po zakończeniu operacji
             event.dataTransfer.clearData();
         },
-        [addFiles] // Zależy od addFiles
+        [addFiles]
     );
 
     return {
@@ -79,6 +95,7 @@ export const useFileManagement = () => {
         addFiles,
         removeFile,
         handleDrop,
-        inputKey, // Klucz do resetu input[type="file"]
+        uploading,
+        inputKey,
     };
 };

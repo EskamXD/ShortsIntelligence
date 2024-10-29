@@ -3,8 +3,8 @@ import AddIcon from "@mui/icons-material/Add";
 import { Button } from "react-bootstrap";
 
 interface FileInputButtonProps {
-    onFileChange: (file: File[]) => void; // Funkcja do obsługi zmiany pliku
-    inputKey: number; // Klucz inputu
+    onFileChange: (file: File[]) => void;
+    inputKey: number;
 }
 
 const FileInputButton: React.FC<FileInputButtonProps> = ({
@@ -15,14 +15,14 @@ const FileInputButton: React.FC<FileInputButtonProps> = ({
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
-            const selectedFiles = Array.from(event.target.files); // Tworzymy tablicę plików
-            onFileChange(selectedFiles); // Przekazujemy całą tablicę plików
+            const selectedFiles = Array.from(event.target.files);
+            onFileChange(selectedFiles);
         }
     };
 
     const handleButtonClick = () => {
         if (fileInputRef.current) {
-            fileInputRef.current.click(); // Kliknij ukryty input, gdy klikniesz przycisk
+            fileInputRef.current.click();
         }
     };
 
@@ -32,7 +32,7 @@ const FileInputButton: React.FC<FileInputButtonProps> = ({
                 type="file"
                 accept="video/*, audio/*"
                 ref={fileInputRef}
-                style={{ display: "none" }} // Ukrywamy input
+                style={{ display: "none" }}
                 onChange={handleFileChange}
                 key={inputKey}
                 multiple

@@ -9,6 +9,7 @@ interface EditorContextType {
     isPlaying: boolean;
     pixelsPerSecond: number;
     playbackPosition: number;
+    projectID: number;
     quarterQualityVideoURL: string | null;
     subtitles: string;
     timelineItems: TrackItem[];
@@ -25,6 +26,7 @@ interface EditorContextType {
     setIsPlaying: (isPlaying: boolean) => void;
     setPixelsPerSecond: (pixelsPerSecond: number) => void;
     setPlaybackPosition: (position: number) => void;
+    setProjectID: (projectID: number) => void;
     setQuarterQualityVideoURL: (url: string | null) => void;
     setSubtitles: (subtitles: string) => void;
     setTimelineItems: React.Dispatch<React.SetStateAction<TrackItem[]>>;
@@ -63,6 +65,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [pixelsPerSecond, setPixelsPerSecond] = useState<number>(100);
     const [playbackPosition, setPlaybackPosition] = useState<number>(0);
+    const [projectID, setProjectID] = useState<number>(-1);
     const [quarterQualityVideoURL, setQuarterQualityVideoURL] = useState<
         string | null
     >(null);
@@ -82,6 +85,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
         isPlaying,
         pixelsPerSecond,
         playbackPosition,
+        projectID,
         quarterQualityVideoURL,
         subtitles,
         timelineItems,
@@ -96,6 +100,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
         setIsPlaying,
         setPixelsPerSecond,
         setPlaybackPosition,
+        setProjectID,
         setQuarterQualityVideoURL,
         setSubtitles,
         setTimelineItems,

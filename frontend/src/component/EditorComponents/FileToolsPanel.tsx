@@ -1,12 +1,13 @@
 import React from "react";
-import { ListGroup, Button } from "react-bootstrap";
+import { ListGroup, Spinner } from "react-bootstrap";
 import { useFileManagement } from "../../hooks/useFileManagement";
 import FileInputButton from "./FileInputButton";
 import DeleteIcon from "@mui/icons-material/Delete";
 import "./FileToolsPanel.css";
 
 const FileToolsPanel: React.FC = () => {
-    const { files, addFiles, removeFile, inputKey } = useFileManagement();
+    const { files, addFiles, removeFile, handleDrop, uploading, inputKey } =
+        useFileManagement();
 
     const handleDragStart = (event: React.DragEvent, file: File) => {
         event.dataTransfer.setData("text/plain", file.name);
@@ -15,11 +16,10 @@ const FileToolsPanel: React.FC = () => {
 
     const handleDropOnDelete = (event: React.DragEvent) => {
         event.preventDefault();
-        // Pobieramy nazwę pliku z dataTransfer
         const fileName = event.dataTransfer.getData("text/plain");
         if (fileName) {
             console.log("Upuszczono plik do usunięcia:", fileName);
-            removeFile(fileName); // Usuwamy plik
+            removeFile(fileName);
         }
     };
 
@@ -27,26 +27,34 @@ const FileToolsPanel: React.FC = () => {
         <div className="file-tools-panel">
             <h5>Files</h5>
 
-            {/* Lista plików */}
             <ListGroup>
-                {files.map((file, index) => (
-                    <ListGroup.Item
-                        key={index}
-                        className="d-flex justify-content-between align-items-center"
-                        draggable
-                        onDragStart={(e) => {
-                            handleDragStart(e, file);
-                        }}>
-                        <span>{file.name}</span>
-                    </ListGroup.Item>
-                ))}
+                {files
+                    .filter(
+                        (file) =>
+                            file.type.startsWith("video/") ||
+                            file.type.startsWith("audio/")
+                    )
+                    .map((file, index) => (
+                        <ListGroup.Item
+                            key={index}
+                            className="d-flex justify-content-between align-items-center"
+                            draggable
+                            onDragStart={(e) => {
+                                handleDragStart(e, file);
+                            }}>
+                            <span>{file.name}</span>
+                        </ListGroup.Item>
+                    ))}
+                {uploading && (
+                    <div className="uploading-indicator">
+                        <Spinner animation="border" role="status" />
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
+                )}
             </ListGroup>
 
             <div className="d-flex justify-content-between mt-3">
-                {/* Przycisk do dodania pliku */}
                 <FileInputButton onFileChange={addFiles} inputKey={inputKey} />
-
-                {/* Obszar do upuszczania pliku */}
                 <div
                     onDrop={handleDropOnDelete}
                     onDragOver={(e) => e.preventDefault()} // Zapobiegaj domyślnemu zachowaniu przeglądarki

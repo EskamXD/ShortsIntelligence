@@ -39,7 +39,7 @@ const TimelinePanel: React.FC = () => {
 
     // Obsługa klawisza Delete do usunięcia wybranego elementu
     useEffect(() => {
-        console.log(timelineItems);
+        // console.log(timelineItems);
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === "Delete" && selectedMediaItem) {
                 const newTimelineItems = timelineItems.filter((item) => {
