@@ -8,7 +8,6 @@ ShortsIntelligence to aplikacja umożliwiająca automatyczne tworzenie krótkich
 - [Opis projektu](#opis-projektu)
 - [Instalacja i uruchomienie](#instalacja-i-uruchomienie)
 - [Jak korzystać z projektu](#jak-korzystać-z-projektu)
-- [Podziękowania](#podziękowania)
 - [Licencja](#licencja)
 
 ## Instalacja i uruchomienie
@@ -43,11 +42,11 @@ Aby uruchomić projekt lokalnie, wykonaj następujące kroki:
    ```bash
    python -m venv .venv
    .\.venv\Scripts\activate.ps1
-
+   
    pip install -r requirements.txt
    python manage.py makemigrations
    python manage.py migrate
-
+   
    python manage.py runserver
    ```
 
@@ -55,18 +54,18 @@ Aby uruchomić projekt lokalnie, wykonaj następujące kroki:
    ```bash
    python3 -m venv venv
    source ./venv/bin/activate
-
+   
    pip install -r requirements.txt
    python manage.py makemigrations
    python manage.py migrate
-
+   
    python manage.py runserver
    ```
       
 4. Zainstaluj zależności frontendowe:
    ```bash
    cd frontend
-
+   
    # Musimy znajdować się w folderze frontend
    npm install
    ```
