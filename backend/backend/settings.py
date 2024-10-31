@@ -11,16 +11,117 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+import GPUtil
+
+
+def get_best_codec(vendor):
+    """Zwraca najlepszy dostępny kodek na podstawie producenta GPU"""
+    codecs = {
+        "NVIDIA": "h264_nvenc",
+        "AMD": "h264_amf",
+        "Intel": "h264_qsv",
+        "Unknown": "libx264",  # Domyślny kodek programowy
+    }
+    return codecs.get(vendor, "libx264")
+
+
+def get_best_whisper_model(vram):
+    """Zwraca najlepszy model Whisper na podstawie dostępnego VRAM"""
+    whisper_models = [
+        (10000, "large"),
+        (6000, "turbo"),
+        (5000, "medium"),
+        (2000, "small"),
+        (1000, "base"),
+        (0, "tiny"),
+    ]
+    for min_vram, model in whisper_models:
+        if vram >= min_vram:
+            return model
+    return "tiny"
+
+
+def get_gpu_info():
+    try:
+        gpus = GPUtil.getGPUs()
+        if gpus:
+            gpu = gpus[
+                0
+            ]  # Zakładamy, że jest tylko jeden GPU; można rozszerzyć na wiele
+
+            # Mapa producentów na słowa kluczowe w nazwach GPU
+            vendor_keywords = {
+                "NVIDIA": ["NVIDIA", "RTX", "GTX", "QUADRO"],
+                "AMD": ["AMD", "RADEON"],
+                "Intel": ["INTEL", "HD", "IRIS", "ARC"],
+                "Apple Silicon": [
+                    "APPLE",
+                    "M1",
+                    "M2",
+                    "M1 Pro",
+                    "M1 Max",
+                    "M2 Pro",
+                    "M2 Max",
+                    "M1 Ultra",
+                    "M2 Ultra",
+                ],
+            }
+
+            # Wykrywanie producenta na podstawie słów kluczowych
+            vendor = "Unknown"
+            for key, keywords in vendor_keywords.items():
+                if any(keyword in gpu.name.upper() for keyword in keywords):
+                    vendor = key
+                    break
+
+            # Wybór najlepszego modelu Whisper i kodeka
+            vram = gpu.memoryTotal  # VRAM w MB
+            whisper_model = get_best_whisper_model(vram)
+            codec = get_best_codec(vendor)
+
+            gpu_info = {
+                "name": gpu.name,
+                "memory_total": vram,
+                "vendor": vendor,
+                "whisper_model": whisper_model,
+                "codec": codec,
+            }
+        else:
+            gpu_info = {
+                "name": "No GPU detected",
+                "memory_total": 0,
+                "vendor": "Unknown",
+                "whisper_model": "tiny",
+                "codec": "libx264",
+            }
+    except Exception as e:
+        gpu_info = {
+            "name": "Error detecting GPU",
+            "memory_total": 0,
+            "vendor": "Unknown",
+            "whisper_model": "tiny",
+            "codec": "libx264",
+            "error": str(e),
+        }
+
+    return gpu_info
+
+
+GPU_INFO = get_gpu_info()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)bzf(iphqv6d$q+15*6ff!(@+^&+0b2@)m$h6(go-^8r2u5le0'
+SECRET_KEY = "django-insecure-)bzf(iphqv6d$q+15*6ff!(@+^&+0b2@)m$h6(go-^8r2u5le0"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -31,52 +132,58 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "backend_api",
+    "corsheaders",
+    "rest_framework",
+    "drf_spectacular",
+    "django_filters",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
-ROOT_URLCONF = 'backend.urls'
+ROOT_URLCONF = "backend.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
+WSGI_APPLICATION = "backend.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -86,16 +193,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -103,9 +210,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "pl-pl"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -115,9 +222,25 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CORS_ORIGIN_WHITELIST = (
+    "http://localhost:5137",
+    "http://127.0.0.1:5173",
+)
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+REST_FRAMEWORK = {
+    # YOUR SETTINGS
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
