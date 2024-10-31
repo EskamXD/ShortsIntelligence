@@ -68,12 +68,14 @@ Aby uruchomić projekt lokalnie, wykonaj następujące kroki:
    cd frontend
    
    # Musimy znajdować się w folderze frontend
-   npm install
+   npm install -g pnpm
+
+   pnpm install
    ```
 
 5. Uruchom serwer deweloperski React:
    ```bash
-   npm run dev
+   pnpm dev
    ```
 
 6. Aplikacja będzie dostępna pod adresem `http://localhost:8000` (backend) oraz `http://localhost:5173` (frontend).
