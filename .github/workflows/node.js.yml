@@ -22,7 +22,19 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: cd frontend && npm ci
-    - run: cd frontend && npm run build --if-present
-    - run: cd frontend && npm test
+        cache: 'pnpm'
+        
+    - name: Install pnpm
+      run: npm install -g pnpm
+
+    - name: Install dependencies with pnpm
+      working-directory: ./frontend
+      run: pnpm install
+
+    - name: Build with pnpm
+      working-directory: ./frontend
+      run: pnpm run build --if-present
+
+    - name: Run tests with pnpm
+      working-directory: ./frontend
+      run: pnpm test
