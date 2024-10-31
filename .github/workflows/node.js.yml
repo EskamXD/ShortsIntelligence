@@ -27,6 +27,9 @@ jobs:
     - name: Install pnpm
       run: npm install -g pnpm
 
+    - name: Add pnpm to PATH
+      run: echo "::add-path::$(npm root -g)/pnpm"
+
     - name: Install dependencies with pnpm
       working-directory: ./frontend
       run: pnpm install
