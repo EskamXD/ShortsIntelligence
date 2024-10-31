@@ -15,9 +15,9 @@ ShortsIntelligence to aplikacja umożliwiająca automatyczne tworzenie krótkich
 Aby uruchomić projekt lokalnie, wykonaj następujące kroki:
 
 ### Wymagania:
-- **Python 3.12.7** (z obsługą virtual environment)
-- **Node.js**
-- **FFmpeg**
+- **Python 3.12.7** (z obsługą virtual environment) [link](https://www.python.org/downloads/release/python-3127/)
+- **Node.js** [link](https://nodejs.org/en/download/package-manager)
+- **FFmpeg** [link](https://www.ffmpeg.org/download.html)
 
 ### Instalacja:
 
