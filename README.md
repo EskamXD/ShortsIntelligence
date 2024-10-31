@@ -38,6 +38,7 @@ Aby uruchomić projekt lokalnie, wykonaj następujące kroki:
 
    
    Alternatywy sposób bez skryptu
+   
    Windows:
    ```bash
    python -m venv .venv
@@ -62,7 +63,7 @@ Aby uruchomić projekt lokalnie, wykonaj następujące kroki:
    python manage.py runserver
    ```
       
-3. Zainstaluj zależności frontendowe:
+4. Zainstaluj zależności frontendowe:
    ```bash
    cd frontend
    
@@ -70,11 +71,11 @@ Aby uruchomić projekt lokalnie, wykonaj następujące kroki:
    npm install
    ```
 
-4. Uruchom serwer deweloperski React:
+5. Uruchom serwer deweloperski React:
    ```bash
    npm run dev
    ```
 
-5. Aplikacja będzie dostępna pod adresem `http://localhost:8000` (backend) oraz `http://localhost:5173` (frontend).
+6. Aplikacja będzie dostępna pod adresem `http://localhost:8000` (backend) oraz `http://localhost:5173` (frontend).
 
 
