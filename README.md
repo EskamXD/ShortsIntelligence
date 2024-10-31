@@ -29,17 +29,17 @@ Aby uruchomić projekt lokalnie, wykonaj następujące kroki:
    ```
 
 2. Uruchom serwer backendowy poprzez gotowy plik run.ps1 (Windows) / run.sh (Linux i MacOS)
-  ```bash
-  cd backend
-  ./run.sh  # Linux/MacOS
-  .\run.ps1 # Windows
-  ```
+   ```bash
+   cd backend
+   ./run.sh  # Linux/MacOS
+   .\run.ps1 # Windows
+   ```
       
 3. Zainstaluj zależności frontendowe:
-  ```bash
-  cd frontend
-  npm install
-  ```
+   ```bash
+   cd frontend
+   npm install
+   ```
 
 4. Uruchom serwer deweloperski React:
    ```bash
