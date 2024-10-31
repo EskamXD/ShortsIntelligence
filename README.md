@@ -31,21 +31,51 @@ Aby uruchomić projekt lokalnie, wykonaj następujące kroki:
 2. Uruchom serwer backendowy poprzez gotowy plik run.ps1 (Windows) / run.sh (Linux i MacOS)
    ```bash
    cd backend
+   
+   # Skrypty uruchamiające dostępne w folderze backend 
    ./run.sh  # Linux/MacOS
    .\run.ps1 # Windows
    ```
+
+   
+### Alternatywy sposób bez skryptu
+   Windows:
+   ```bash
+   python -m venv .venv
+   .\.venv\Scripts\activate.ps1
+
+   pip install -r requirements.txt
+   python manage.py makemigrations
+   python manage.py migrate
+
+   python manage.py runserver
+   ```
+
+   Linux/MacOS:
+   ```bash
+   python3 -m venv venv
+   source ./venv/bin/activate
+
+   pip install -r requirements.txt
+   python manage.py makemigrations
+   python manage.py migrate
+
+   python manage.py runserver
+   ```
       
-3. Zainstaluj zależności frontendowe:
+4. Zainstaluj zależności frontendowe:
    ```bash
    cd frontend
+
+   # Musimy znajdować się w folderze frontend
    npm install
    ```
 
-4. Uruchom serwer deweloperski React:
+5. Uruchom serwer deweloperski React:
    ```bash
    npm run dev
    ```
 
-5. Aplikacja będzie dostępna pod adresem `http://localhost:8000` (backend) oraz `http://localhost:5173` (frontend).
+6. Aplikacja będzie dostępna pod adresem `http://localhost:8000` (backend) oraz `http://localhost:5173` (frontend).
 
 
