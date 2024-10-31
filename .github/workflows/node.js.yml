@@ -27,7 +27,8 @@ jobs:
       run: npm install -g pnpm
 
     - name: Add pnpm to PATH
-      run: echo "::add-path::$(npm root -g)/pnpm"
+      run: |
+        echo "$(npm bin -g)" >> $GITHUB_PATH
 
     - name: Install dependencies with pnpm
       working-directory: ./frontend
