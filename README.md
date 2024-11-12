@@ -6,7 +6,7 @@ ShortsIntelligence is an application designed to automatically create short vide
 
 ## Requirements
 
-To run ShortsIntelligence, ensure the following dependencies are installed with the specified versions or higher:
+To run ShortsIntelligence, ensure the following dependencies are installed with the specified versions (that I use and test App):
 - Python 3.12.7
 - Django 5.1.2
 - Node.js 20.16.0
@@ -31,7 +31,7 @@ Choose an installation option based on your environment.
     - Create and activate a virtual environment:
       ```bash
       python3 -m venv venv
-      source venv/bin/activate  # On Windows use `venv\\Scripts\\activate`
+      source venv/bin/activate  # On Windows use `./venv\Scripts\activate`
       ```
     - Install Python dependencies:
       ```bash
@@ -39,7 +39,12 @@ Choose an installation option based on your environment.
       ```
     - Run database migrations:
       ```bash
-      python manage.py migrate
+      python3 manage.py migrate
+      ```
+
+    - Or you can use script
+      ```bash
+      chmod x+ run.sh # On Windows use '.\run.ps1'
       ```
 
 3. **Frontend Setup (React)**:
@@ -59,7 +64,7 @@ Choose an installation option based on your environment.
       ```
     - In a new terminal, start the React development server:
       ```bash
-      npm start
+      npm dev
       ```
 
 5. **Access the Application**:
