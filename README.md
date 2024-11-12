@@ -1,83 +1,119 @@
 # ShortsIntelligence
-## Opis projektu
 
-ShortsIntelligence to aplikacja umożliwiająca automatyczne tworzenie krótkich filmików (shortów) z długich materiałów wideo. Dzięki wykorzystaniu technologii Django i React, aplikacja zapewnia intuicyjny interfejs oraz możliwość przetwarzania i analizy długich nagrań. Głównym celem projektu jest automatyzacja procesu tworzenia klipów, co pozwala użytkownikom szybko generować i udostępniać skrócone wersje filmów, idealne na media społecznościowe.
+## Project Overview
 
-## Spis treści
+ShortsIntelligence is an application designed to automatically create short videos from lengthy recordings. Built with Django and React, the application provides an intuitive interface for processing and analyzing long videos. The main goal of this project is to streamline the creation of clips, allowing users to quickly generate and share concise versions of videos optimized for social media.
 
-- [Opis projektu](#opis-projektu)
-- [Instalacja i uruchomienie](#instalacja-i-uruchomienie)
-- [Jak korzystać z projektu](#jak-korzystać-z-projektu)
-- [Licencja](#licencja)
+## Requirements
 
-## Instalacja i uruchomienie
+To run ShortsIntelligence, ensure the following dependencies are installed with the specified versions or higher:
+- Python 3.12.7
+- Django 5.1.2
+- Node.js 20.16.0
+- npm 10.8.1
+- pnpm 9.9.0
+- React 18.3.1
+- ffmpeg 7.0.2
 
-Aby uruchomić projekt lokalnie, wykonaj następujące kroki:
+## Installation
 
-### Wymagania:
-- **Python 3.12.7** (z obsługą virtual environment) [link](https://www.python.org/downloads/release/python-3127/)
-- **Node.js** [link](https://nodejs.org/en/download/package-manager)
-- **FFmpeg** [link](https://www.ffmpeg.org/download.html)
+Choose an installation option based on your environment.
 
-### Instalacja:
+### For Development
 
-1. Sklonuj repozytorium:
-   ```bash
-   git clone https://github.com/EskamXD/ShortsIntelligence
-   cd shortsintelligence
-   ```
+1. **Clone the repository**:
+    ```bash
+    git clone <repository-url>
+    cd ShortsIntelligence
+    ```
 
-2. Uruchom serwer backendowy poprzez gotowy plik run.ps1 (Windows) / run.sh (Linux i MacOS)
-   ```bash
-   cd backend
-   
-   # Skrypty uruchamiające dostępne w folderze backend 
-   ./run.sh  # Linux/MacOS
-   .\run.ps1 # Windows
-   ```
+2. **Backend Setup (Django)**:
+    - Create and activate a virtual environment:
+      ```bash
+      python3 -m venv venv
+      source venv/bin/activate  # On Windows use `venv\\Scripts\\activate`
+      ```
+    - Install Python dependencies:
+      ```bash
+      pip install -r requirements.txt
+      ```
+    - Run database migrations:
+      ```bash
+      python manage.py migrate
+      ```
 
-   
-   Alternatywy sposób bez skryptu
-   
-   Windows:
-   ```bash
-   python -m venv .venv
-   .\.venv\Scripts\activate.ps1
-   
-   pip install -r requirements.txt
-   python manage.py makemigrations
-   python manage.py migrate
-   
-   python manage.py runserver
-   ```
+3. **Frontend Setup (React)**:
+    - Navigate to the frontend directory:
+      ```bash
+      cd frontend
+      ```
+    - Install Node dependencies:
+      ```bash
+      npm install
+      ```
 
-   Linux/MacOS:
-   ```bash
-   python3 -m venv venv
-   source ./venv/bin/activate
-   
-   pip install -r requirements.txt
-   python manage.py makemigrations
-   python manage.py migrate
-   
-   python manage.py runserver
-   ```
-      
-4. Zainstaluj zależności frontendowe:
-   ```bash
-   cd frontend
-   
-   # Musimy znajdować się w folderze frontend
-   npm install -g pnpm
+4. **Starting the Application**:
+    - In the backend root directory, start the Django server:
+      ```bash
+      python manage.py runserver
+      ```
+    - In a new terminal, start the React development server:
+      ```bash
+      npm start
+      ```
 
-   pnpm install
-   ```
+5. **Access the Application**:
+   - Open your browser and navigate to `http://localhost:3000` for the frontend and `http://localhost:8000` for the backend.
 
-5. Uruchom serwer deweloperski React:
-   ```bash
-   pnpm dev
-   ```
+### For Production
 
-6. Aplikacja będzie dostępna pod adresem `http://localhost:8000` (backend) oraz `http://localhost:5173` (frontend).
+1. **Set Environment Variables**:
+   Configure environment variables for production settings, including database configurations, secret keys, etc.
 
+2. **Build the Frontend**:
+    ```bash
+    cd frontend
+    npm run build
+    ```
 
+3. **Serve the Frontend**:
+   Use a web server like Nginx to serve the built frontend from the `frontend/build` directory.
+
+4. **Run Django in Production Mode**:
+    ```bash
+    python manage.py collectstatic --noinput
+    python manage.py runserver 0.0.0.0:8000
+    ```
+
+5. **Additional Production Steps**:
+   - Use `gunicorn` or another WSGI server for Django in production.
+   - Configure a reverse proxy like Nginx for production stability.
+
+## Usage Guide
+
+### Creating a New Project
+
+1. **Add a New AI Project**:
+    - In the dashboard, go to “New Project.”
+    - Provide a title and description for your project.
+
+2. **Upload a Video**:
+    - Upload a video file you want to convert into shorter clips.
+
+3. **Trim the Video**:
+    - Select the starting and ending points to define the clip length.
+
+4. **Apply Effects**:
+    - Customize your video by adding effects, text overlays, audio settings, and choosing resolution settings.
+
+5. **Export**:
+    - Export your project to the timeline.
+    - Optionally, download the video after export.
+
+### Additional Features
+
+- **Timeline Management**: Arrange clips on the timeline, adjust positions, and manage clip durations.
+- **Editing Tools**: Utilize the video editor to fine-tune content, adjust audio, and add transitions.
+- **Export Options**: Choose export formats suitable for social media platforms.
+
+This guide should help you set up and start using ShortsIntelligence efficiently, whether for development or production.
