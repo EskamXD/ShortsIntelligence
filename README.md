@@ -42,9 +42,10 @@ Choose an installation option based on your environment.
       python3 manage.py migrate
       ```
 
-    - Or you can use script
+      **Or you can use script**
       ```bash
-      chmod x+ run.sh # On Windows use '.\run.ps1'
+      chmod x+ run.sh
+      ./run.sh # On Windows use '.\run.ps1'
       ```
 
 3. **Frontend Setup (React)**:
