@@ -387,13 +387,34 @@ def get_gpu_info(request):
 
 @api_view(["POST"])
 def upload_file(request):
-    file = request.FILES.get("file")
-    project_id = request.POST.get("project_id")
-    if file:
-        # Save file to default_storage
-        file_path = default_storage.save(f"edit_files_{project_id}/{file.name}", file)
-        return JsonResponse({"file_url": default_storage.url(file_path)}, status=201)
-    return JsonResponse({"error": "No file uploaded"}, status=400)
+    try:
+        file = request.FILES.get("file")
+        project_id = request.POST.get("project_id")
+        if not file:
+            return JsonResponse({"error": "No file uploaded"}, status=400)
+
+        # Sprawdź, czy project_id jest poprawne
+        if not project_id:
+            return JsonResponse({"error": "Project ID is required"}, status=400)
+
+        try:
+            # Save file to default_storage
+            file_path = default_storage.save(
+                f"edit_files_{project_id}/{file.name}", file
+            )
+            return JsonResponse(
+                {"file_url": default_storage.url(file_path)}, status=201
+            )
+        except Exception as storage_error:
+            return JsonResponse(
+                {"error": f"Failed to save file: {str(storage_error)}"},
+                status=500,
+            )
+    except Exception as e:
+        return JsonResponse(
+            {"error": f"An unexpected error occurred: {str(e)}"},
+            status=500,
+        )
 
 
 @api_view(["GET"])

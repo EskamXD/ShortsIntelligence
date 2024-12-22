@@ -41,7 +41,9 @@ interface EditorProviderProps {
 }
 
 // Kontekst
-const EditorContext = createContext<EditorContextType | undefined>(undefined);
+export const EditorContext = createContext<EditorContextType | undefined>(
+    undefined
+);
 
 export const useEditorContext = () => {
     const context = useContext(EditorContext);

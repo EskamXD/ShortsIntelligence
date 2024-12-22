@@ -182,13 +182,13 @@ const PreviewPanel: React.FC = () => {
             </div>
 
             <div className="custom-controls">
-                <button onClick={togglePlayPause}>
+                <button onClick={togglePlayPause} aria-label="play">
                     {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
                 </button>
-                <button onClick={stopVideo}>
+                <button onClick={stopVideo} aria-label="stop">
                     <StopIcon />
                 </button>
-                <button onClick={switchSound}>
+                <button onClick={switchSound} aria-label="volume">
                     {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
                 </button>
             </div>
