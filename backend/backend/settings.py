@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 import GPUtil
+from decouple import config
 
 
 def get_best_codec(vendor):
@@ -121,7 +122,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-)bzf(iphqv6d$q+15*6ff!(@+^&+0b2@)m$h6(go-^8r2u5le0"
+# Jeśli chcesz ustawić domyślny klucz w razie braku w .env
+SECRET_KEY = config("SECRET_KEY", default="fallback-secret-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
