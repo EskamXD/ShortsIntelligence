@@ -414,7 +414,9 @@ const NewAIProject: React.FC = () => {
             {step === 4 && (
                 <div>
                     <h3>4. Additional Options</h3>
-                    <Form.Group className="mb-3">
+                    <Form.Group
+                        className="mb-3"
+                        style={{ width: "fit-content", margin: "0 auto" }}>
                         <Form.Check
                             type="checkbox"
                             label="Enhance Audio Quality"
