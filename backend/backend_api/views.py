@@ -381,7 +381,7 @@ def process_video(request):
 
 @api_view(["GET"])
 def get_gpu_info(request):
-    gpu_info = settings.GPU_INFO
+    gpu_info = settings.GPU_LIST
     return Response(gpu_info)
 
 
