@@ -50,6 +50,8 @@ class GPUInfo:
                 return self._get_vram_amd()
             elif vendor == "Intel":
                 return self._get_vram_intel()
+            elif vendor == "Apple":
+                return self._get_vram_apple()
             else:
                 print(f"No VRAM detection tool available for vendor: {vendor}")
                 return 0
@@ -115,6 +117,27 @@ class GPUInfo:
             return 0
         except Exception as e:
             print(f"Error using intel_gpu_top: {e}")
+            return 0
+
+    def _get_vram_apple(self):
+        """
+        Używa system_profiler do sprawdzenia ilości VRAM dla kart Apple.
+        """
+        try:
+            sp_output = subprocess.check_output(
+                ["system_profiler", "SPDisplaysDataType"], text=True
+            )
+            vram = 0
+            for line in sp_output.split("\n"):
+                if "VRAM (Total):" in line:
+                    vram = int(line.split(":")[-1].strip().replace(" MB", ""))
+                    break
+            return vram
+        except FileNotFoundError:
+            print("system_profiler not found. Ensure you are on macOS.")
+            return 0
+        except Exception as e:
+            print(f"Error using system_profiler: {e}")
             return 0
 
     def get_gpu_info(self):
