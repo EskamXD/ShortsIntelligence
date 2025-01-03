@@ -33,6 +33,7 @@ if ($pipVersion -like "*$venvFolderPath*") {
 # 2. Zainstalowanie wymaganych pakietów
 Write-Host "Instalowanie wymaganych pakietów..."
 & pip install -r requirements.txt
+& pip install wmi
 
 # 3. Uruchomienie migracji Django
 Write-Host "Uruchamianie migracji Django..."

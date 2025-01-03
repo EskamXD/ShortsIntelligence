@@ -473,7 +473,7 @@ def finalize_project_files(request):
 
         # Return paths for the saved files
         video_url = default_storage.url(
-            f"edit_files_{project_id}/{video_name if video_name else "processed_video"}.mp4"
+            f"edit_files_{project_id}/{video_name if video_name else 'processed_video'}.mp4"
         )
         subtitles_url = (
             default_storage.url(f"edit_files_{project_id}/subtitles.srt")

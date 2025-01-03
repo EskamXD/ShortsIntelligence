@@ -129,6 +129,7 @@ class GPUInfo:
             )
             vram = 0
             for line in sp_output.split("\n"):
+                print(line)
                 if "VRAM (Total):" in line:
                     vram = int(line.split(":")[-1].strip().replace(" MB", ""))
                     break
