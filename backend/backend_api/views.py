@@ -130,8 +130,9 @@ def process_video(request):
         print("\n\n\n", video_path, output_video_path, subtitles_path, "\n\n\n")
 
         # Wybór kodeka i modelu Whisper z ustawień
-        codec = settings.GPU_INFO["codec"]
-        whisper_model = settings.GPU_INFO["whisper_model"]
+        codec = settings.GPU_LIST["codec"]
+        whisper_model = settings.GPU_LIST["whisper_model"]
+        print("\n\n\n", codec, whisper_model, "\n\n\n")
 
         # Uzyskaj proporcje wideo za pomocą FFprobe
         try:

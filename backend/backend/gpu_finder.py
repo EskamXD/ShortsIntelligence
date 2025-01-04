@@ -166,6 +166,7 @@ class GPUInfo:
             if "vram" in gpu:
                 gpu["whisper_model"] = self.get_best_whisper_model(gpu["vram"])
 
+        print(gpu_list)
         return gpu_list
 
     def _get_windows_gpu_info(self):

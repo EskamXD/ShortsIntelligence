@@ -17,7 +17,7 @@ from backend.gpu_finder import GPUInfo
 
 
 gpu_info = GPUInfo()
-GPU_LIST = gpu_info.get_gpu_info()
+GPU_LIST = gpu_info.get_gpu_info()[0]
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
