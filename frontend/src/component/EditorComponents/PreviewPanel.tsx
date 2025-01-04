@@ -24,6 +24,7 @@ const PreviewPanel: React.FC = () => {
         setVideoURL,
         timelineItems,
         pixelsPerSecond,
+        subtitleStyles,
     } = useEditorContext();
 
     const getVideoBlobURL = (file: File, itemId: string): string => {
@@ -201,10 +202,11 @@ const PreviewPanel: React.FC = () => {
                             bottom: "10px",
                             width: "100%",
                             textAlign: "center",
-                            color: "white",
-                            backgroundColor: "rgba(0, 0, 0, 0.6)",
+                            color: subtitleStyles.color,
+                            // backgroundColor: "rgba(0, 0, 0, 0.6)",
                             padding: "5px",
-                            fontSize: "16px",
+                            fontSize: subtitleStyles.size,
+                            fontFamily: subtitleStyles.font,
                         }}>
                         {currentSubtitle}
                     </div>

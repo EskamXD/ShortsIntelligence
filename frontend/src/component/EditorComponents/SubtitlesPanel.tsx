@@ -10,17 +10,24 @@ interface Subtitle {
     start: string;
     end: string;
     text: string;
+    font: string;
+    color: string;
+    size: string;
 }
 
 const SubtitlesPanel: React.FC = () => {
-    const { projectID, subtitles, setSubtitles } = useEditorContext();
+    const { projectID, subtitles, setSubtitles, setSubtitleStyles } =
+        useEditorContext();
     const [subtitleList, setSubtitleList] = useState<Subtitle[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [newSubtitle, setNewSubtitle] = useState<Subtitle>({
         id: uuidv4(),
-        start: "",
-        end: "",
+        start: "00:00:00,000",
+        end: "00:00:05,000",
         text: "",
+        font: "Arial",
+        color: "#000000",
+        size: "16px",
     });
 
     useEffect(() => {
@@ -40,6 +47,9 @@ const SubtitlesPanel: React.FC = () => {
                         start: start.trim(),
                         end: end.trim(),
                         text: textLines.join(" ").trim(),
+                        font: "Arial",
+                        color: "#000000",
+                        size: "16px",
                     };
                 })
                 .filter(Boolean) as Subtitle[];
@@ -56,8 +66,21 @@ const SubtitlesPanel: React.FC = () => {
                 .map(({ start, end, text }) => `${start} --> ${end}\n${text}`)
                 .join("\n\n")
         );
+        setSubtitleStyles({
+            font: newSubtitle.font,
+            color: newSubtitle.color,
+            size: newSubtitle.size,
+        });
         setShowModal(false);
-        setNewSubtitle({ id: uuidv4(), start: "", end: "", text: "" });
+        setNewSubtitle({
+            id: uuidv4(),
+            start: "00:00:00,000",
+            end: "00:00:05,000",
+            text: "",
+            font: "Arial",
+            color: "#000000",
+            size: "16px",
+        });
     };
 
     const handleInputChange = (field: keyof Subtitle, value: string) => {
@@ -159,6 +182,41 @@ const SubtitlesPanel: React.FC = () => {
                                 value={newSubtitle.text}
                                 onChange={(e) =>
                                     handleInputChange("text", e.target.value)
+                                }
+                            />
+                        </Form.Group>
+                        <Form.Group controlId="font">
+                            <Form.Label>Font</Form.Label>
+                            <Form.Control
+                                as="select"
+                                value={newSubtitle.font}
+                                onChange={(e) =>
+                                    handleInputChange("font", e.target.value)
+                                }>
+                                <option>Arial</option>
+                                <option>Times New Roman</option>
+                                <option>Verdana</option>
+                                <option>Courier New</option>
+                            </Form.Control>
+                        </Form.Group>
+                        <Form.Group controlId="color">
+                            <Form.Label>Color</Form.Label>
+                            <Form.Control
+                                type="color"
+                                value={newSubtitle.color}
+                                onChange={(e) =>
+                                    handleInputChange("color", e.target.value)
+                                }
+                            />
+                        </Form.Group>
+                        <Form.Group controlId="size">
+                            <Form.Label>Size</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="16px"
+                                value={newSubtitle.size}
+                                onChange={(e) =>
+                                    handleInputChange("size", e.target.value)
                                 }
                             />
                         </Form.Group>

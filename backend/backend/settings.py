@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from decouple import config
-from backend.gpu_finder import GPUInfo
+from backend.gpu_info import GPUInfo
 
 
 gpu_info = GPUInfo()

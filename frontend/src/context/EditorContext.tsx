@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { TrackItem } from "../interfaces";
 
+interface SubtitleStyles {
+    font: string;
+    color: string;
+    size: string;
+}
 interface EditorContextType {
     effects: string[];
     files: File[];
@@ -12,6 +17,7 @@ interface EditorContextType {
     projectID: number;
     quarterQualityVideoURL: string | null;
     subtitles: string;
+    subtitleStyles: SubtitleStyles;
     timelineItems: TrackItem[];
     timelinePanelWidth: number;
     timelineTrackContainerWidthPx: number;
@@ -29,6 +35,7 @@ interface EditorContextType {
     setProjectID: (projectID: number) => void;
     setQuarterQualityVideoURL: (url: string | null) => void;
     setSubtitles: (subtitles: string) => void;
+    setSubtitleStyles: (styles: SubtitleStyles) => void;
     setTimelineItems: React.Dispatch<React.SetStateAction<TrackItem[]>>;
     setTimelinePanelWidth: (width: number) => void;
     setTimeLineTrackContainerWidthPx: (width: number) => void;
@@ -72,6 +79,11 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
         string | null
     >(null);
     const [subtitles, setSubtitles] = useState<string>("");
+    const [subtitleStyles, setSubtitleStyles] = useState<SubtitleStyles>({
+        font: "Arial",
+        color: "#000000",
+        size: "16px",
+    });
     const [timelineItems, setTimelineItems] = useState<TrackItem[]>([]);
     const [timelinePanelWidth, setTimelinePanelWidth] = useState<number>(0);
     const [timelineTrackContainerWidthPx, setTimeLineTrackContainerWidthPx] =
@@ -90,6 +102,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
         projectID,
         quarterQualityVideoURL,
         subtitles,
+        subtitleStyles,
         timelineItems,
         timelinePanelWidth,
         timelineTrackContainerWidthPx,
@@ -105,6 +118,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
         setProjectID,
         setQuarterQualityVideoURL,
         setSubtitles,
+        setSubtitleStyles,
         setTimelineItems,
         setTimelinePanelWidth,
         setTimeLineTrackContainerWidthPx,
