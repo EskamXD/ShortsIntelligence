@@ -1,7 +1,7 @@
 export interface TrackItem {
     id: string; // Unique identifier UUIDv4
-    type: "video" | "audio"; // Item type
-    file: File; // Item file
+    type: "video" | "audio" | "subtitles"; // Item type
+    file: File | null; // Item file
     name: string; // Item name
     durationInS: number; // Item duration in seconds
     durationInPx: number; // Item width in pixels

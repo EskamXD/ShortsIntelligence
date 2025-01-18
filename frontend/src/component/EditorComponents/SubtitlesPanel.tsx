@@ -1,4 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { Modal, Button, Form } from "react-bootstrap";
 import { useEditorContext } from "../../context/EditorContext";
 import { fetchSubtitles } from "../../api/apiService";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -16,7 +18,7 @@ const splitTextIntoChunksWithTime = (
     endTime: number
 ): SubtitleChunk[] => {
     const words = text.split(" ");
-    const totalDuration = endTime - startTime; // Całkowity czas trwania napisu
+    const totalDuration = endTime - startTime;
     const chunks: SubtitleChunk[] = [];
     let currentChunk: string[] = [];
     let chunkStartTime = startTime;
@@ -35,12 +37,11 @@ const splitTextIntoChunksWithTime = (
                     end: chunkStartTime + chunkDuration,
                 });
 
-                chunkStartTime += chunkDuration; // Zaktualizuj czas rozpoczęcia
+                chunkStartTime += chunkDuration;
                 currentChunk = [word];
             }
         }
 
-        // Jeśli to ostatnie słowo, dodaj ostatni chunk
         if (index === words.length - 1 && currentChunk.length > 0) {
             const chunkDuration =
                 (totalDuration / words.length) * currentChunk.length;
@@ -76,33 +77,28 @@ const parseSRT = (subtitles: string): Subtitle[] => {
             try {
                 let lines = entry.split("\n");
 
-                // Filtruj linie, które zawierają tylko liczby (np. "6") lub są puste
                 lines = lines.filter(
                     (line) => !/^\d+$/.test(line.trim()) && line.trim() !== ""
                 );
 
-                if (lines.length < 2) return null; // Minimalnie 2 linie: czas + tekst
+                if (lines.length < 2) return null;
 
-                const times = lines[0]; // Pierwsza linia po filtrowaniu to czas
+                const times = lines[0];
                 const [start, end] = times.split(" --> ");
                 if (!start || !end) return null;
 
                 const startSeconds = convertToSeconds(start.trim());
                 const endSeconds = convertToSeconds(end.trim());
-                const textLines = lines.slice(1); // Reszta to tekst
+                const textLines = lines.slice(1);
                 const fullText = textLines.join(" ").trim();
 
-                // Podziel tekst na fragmenty uwzględniając maksymalną długość znaków
                 const textChunks = splitTextIntoChunksWithTime(
                     fullText,
-                    25, // Maksymalna długość fragmentu
+                    25,
                     startSeconds,
                     endSeconds
                 );
 
-                console.table(textChunks);
-
-                // Każdy fragment traktujemy jako osobny napis
                 return textChunks.map((chunk) => ({
                     id: uuidv4(),
                     start: start.trim(),
@@ -119,15 +115,8 @@ const parseSRT = (subtitles: string): Subtitle[] => {
                 return null;
             }
         })
-        .flat() // Spłaszczenie tablicy fragmentów w jedną tablicę napisów
+        .flat()
         .filter(Boolean) as Subtitle[];
-};
-
-const cleanTextFromNumbers = (text: string): string => {
-    return text
-        .split("\n") // Podziel tekst na linie
-        .filter((line) => !/^\d+$/.test(line.trim())) // Usuń linie zawierające wyłącznie liczby
-        .join("\n"); // Połącz linie z powrotem w tekst
 };
 
 interface Subtitle {
@@ -143,13 +132,8 @@ interface Subtitle {
 }
 
 const SubtitlesPanel: React.FC = () => {
-    const {
-        projectID,
-        processedSubtitles,
-        setProcessedSubtitles,
-        setSubtitles,
-        setSubtitleStyles,
-    } = useEditorContext();
+    const { projectID, processedSubtitles, setProcessedSubtitles } =
+        useEditorContext();
 
     const [subtitleList, setSubtitleList] = useState<Subtitle[]>([]);
     const [editingSubtitle, setEditingSubtitle] = useState<Subtitle | null>(
@@ -168,11 +152,6 @@ const SubtitlesPanel: React.FC = () => {
         outlineColor: "#000000",
     });
 
-    // useEffect(() => {
-    //     const parsed = parseSRT(subtitles);
-    //     setSubtitleList(parsed);
-    // }, [subtitles]);
-
     useEffect(() => {
         const loadSubtitlesFromProject = async () => {
             try {
@@ -181,7 +160,6 @@ const SubtitlesPanel: React.FC = () => {
                     const parsedSubtitles = parseSRT(response);
                     setSubtitleList(parsedSubtitles);
                     setProcessedSubtitles(parsedSubtitles);
-                    // setSubtitles(response); // Surowy tekst SRT
                 }
             } catch (error) {
                 console.error("Failed to load subtitles:", error);
@@ -189,7 +167,7 @@ const SubtitlesPanel: React.FC = () => {
         };
 
         loadSubtitlesFromProject();
-    }, [projectID, setProcessedSubtitles, setSubtitles]);
+    }, [projectID, setProcessedSubtitles]);
 
     const handleAddOrEditSubtitle = () => {
         const updatedList = editingSubtitle
@@ -201,13 +179,6 @@ const SubtitlesPanel: React.FC = () => {
             : [...processedSubtitles, newSubtitle];
 
         setProcessedSubtitles(updatedList);
-
-        setSubtitles(
-            updatedList
-                .map(({ start, end, text }) => `${start} --> ${end}\n${text}`)
-                .join("\n\n")
-        );
-
         setShowModal(false);
         setEditingSubtitle(null);
     };
@@ -228,11 +199,7 @@ const SubtitlesPanel: React.FC = () => {
     const handleDeleteSubtitle = (index: number) => {
         const updatedList = subtitleList.filter((_, i) => i !== index);
         setSubtitleList(updatedList);
-        setSubtitles(
-            updatedList
-                .map(({ start, end, text }) => `${start} --> ${end}\n${text}`)
-                .join("\n\n")
-        );
+        setProcessedSubtitles(updatedList);
     };
 
     return (
@@ -341,7 +308,6 @@ const SubtitlesPanel: React.FC = () => {
                                 }
                             />
                         </Form.Group>
-                        {/* Add other input fields for font, color, size, etc., similar to above */}
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>

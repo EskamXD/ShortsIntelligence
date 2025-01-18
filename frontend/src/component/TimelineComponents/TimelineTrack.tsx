@@ -4,7 +4,7 @@ import Draggable, { DraggableEvent } from "react-draggable";
 import { formatTime } from "../utils/timeUtils";
 
 interface TimelineTrackProps {
-    trackType: "video" | "audio";
+    trackType: "video" | "audio" | "subtitles";
     pixelsPerSecond: number;
     scrollLeft: number;
     handleFileProcessing: (file: File) => void;
