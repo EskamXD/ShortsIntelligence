@@ -1,6 +1,25 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { TrackItem } from "../interfaces";
 
+interface SubtitleStyles {
+    font: string;
+    color: string;
+    size: string;
+    outline: string;
+    outlineColor: string;
+}
+
+interface Subtitle {
+    id: string;
+    start: string;
+    end: string;
+    text: string;
+    font: string;
+    color: string;
+    size: string;
+    outline: string;
+    outlineColor: string;
+}
 interface EditorContextType {
     effects: string[];
     files: File[];
@@ -34,6 +53,9 @@ interface EditorContextType {
     setTimeLineTrackContainerWidthPx: (width: number) => void;
     setVideoURL: (url: string | null) => void;
     setZoom: (zoom: number) => void;
+
+    processedSubtitles: Subtitle[];
+    setProcessedSubtitles: React.Dispatch<React.SetStateAction<Subtitle[]>>;
 }
 
 interface EditorProviderProps {
@@ -70,12 +92,23 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
         string | null
     >(null);
     const [subtitles, setSubtitles] = useState<string>("");
+    const [subtitleStyles, setSubtitleStyles] = useState<SubtitleStyles>({
+        font: "Arial",
+        color: "#ffffff",
+        size: "32px",
+        outline: "2px",
+        outlineColor: "#000000",
+    });
     const [timelineItems, setTimelineItems] = useState<TrackItem[]>([]);
     const [timelinePanelWidth, setTimelinePanelWidth] = useState<number>(0);
     const [timelineTrackContainerWidthPx, setTimeLineTrackContainerWidthPx] =
         useState<number>(6000);
     const [videoURL, setVideoURL] = useState<string | null>(null);
     const [zoom, setZoom] = useState<number>(1.0);
+
+    const [processedSubtitles, setProcessedSubtitles] = useState<Subtitle[]>(
+        []
+    );
 
     const value = {
         effects,
@@ -108,6 +141,9 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
         setTimeLineTrackContainerWidthPx,
         setVideoURL,
         setZoom,
+
+        processedSubtitles,
+        setProcessedSubtitles,
     };
 
     return (
