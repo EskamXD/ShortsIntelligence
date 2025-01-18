@@ -5,6 +5,20 @@ interface SubtitleStyles {
     font: string;
     color: string;
     size: string;
+    outline: string;
+    outlineColor: string;
+}
+
+interface Subtitle {
+    id: string;
+    start: string;
+    end: string;
+    text: string;
+    font: string;
+    color: string;
+    size: string;
+    outline: string;
+    outlineColor: string;
 }
 interface EditorContextType {
     effects: string[];
@@ -41,6 +55,9 @@ interface EditorContextType {
     setTimeLineTrackContainerWidthPx: (width: number) => void;
     setVideoURL: (url: string | null) => void;
     setZoom: (zoom: number) => void;
+
+    processedSubtitles: Subtitle[];
+    setProcessedSubtitles: React.Dispatch<React.SetStateAction<Subtitle[]>>;
 }
 
 interface EditorProviderProps {
@@ -81,8 +98,10 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
     const [subtitles, setSubtitles] = useState<string>("");
     const [subtitleStyles, setSubtitleStyles] = useState<SubtitleStyles>({
         font: "Arial",
-        color: "#000000",
-        size: "16px",
+        color: "#ffffff",
+        size: "32px",
+        outline: "2px",
+        outlineColor: "#000000",
     });
     const [timelineItems, setTimelineItems] = useState<TrackItem[]>([]);
     const [timelinePanelWidth, setTimelinePanelWidth] = useState<number>(0);
@@ -90,6 +109,10 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
         useState<number>(6000);
     const [videoURL, setVideoURL] = useState<string | null>(null);
     const [zoom, setZoom] = useState<number>(1.0);
+
+    const [processedSubtitles, setProcessedSubtitles] = useState<Subtitle[]>(
+        []
+    );
 
     const value = {
         effects,
@@ -124,6 +147,9 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
         setTimeLineTrackContainerWidthPx,
         setVideoURL,
         setZoom,
+
+        processedSubtitles,
+        setProcessedSubtitles,
     };
 
     return (

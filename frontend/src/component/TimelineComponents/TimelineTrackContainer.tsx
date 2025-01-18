@@ -11,61 +11,61 @@ interface TimelineTrackContainerProps {
     handleMouseDown: (event: React.MouseEvent) => void;
 }
 
-const parseSubtitles = (subtitles: string) => {
-    const items: TrackItem[] = [];
-    const lines = subtitles.split("\n");
+// const parseSubtitles = (subtitles: string) => {
+//     const items: TrackItem[] = [];
+//     const lines = subtitles.split("\n");
 
-    let startTime = 0;
-    let endTime = 0;
-    let text = "";
+//     let startTime = 0;
+//     let endTime = 0;
+//     let text = "";
 
-    lines.forEach((line) => {
-        const timeMatch = line.match(
-            /(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/
-        );
-        if (timeMatch) {
-            // Jeśli jest tekst do zapisania, dodajemy go jako element
-            if (text) {
-                items.push({
-                    id: uuidv4(),
-                    type: "subtitles",
-                    file: null,
-                    name: text.trim(),
-                    durationInS: endTime - startTime,
-                    durationInPx: (endTime - startTime) * 100, // Przykładowe przeliczenie
-                    startPosition: startTime * 100, // Przykładowe przeliczenie
-                    startTime,
-                    endPosition: endTime * 100, // Przykładowe przeliczenie
-                });
-                text = ""; // Reset tekstu
-            }
+//     lines.forEach((line) => {
+//         const timeMatch = line.match(
+//             /(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/
+//         );
+//         if (timeMatch) {
+//             // Jeśli jest tekst do zapisania, dodajemy go jako element
+//             if (text) {
+//                 items.push({
+//                     id: uuidv4(),
+//                     type: "subtitles",
+//                     file: null,
+//                     name: text.trim(),
+//                     durationInS: endTime - startTime,
+//                     durationInPx: (endTime - startTime) * 100, // Przykładowe przeliczenie
+//                     startPosition: startTime * 100, // Przykładowe przeliczenie
+//                     startTime,
+//                     endPosition: endTime * 100, // Przykładowe przeliczenie
+//                 });
+//                 text = ""; // Reset tekstu
+//             }
 
-            // Aktualizacja czasu
-            startTime = convertToSeconds(timeMatch[1]);
-            endTime = convertToSeconds(timeMatch[2]);
-        } else if (line.trim()) {
-            // Sklejanie linii napisu
-            text += `${line} `;
-        }
-    });
+//             // Aktualizacja czasu
+//             startTime = convertToSeconds(timeMatch[1]);
+//             endTime = convertToSeconds(timeMatch[2]);
+//         } else if (line.trim()) {
+//             // Sklejanie linii napisu
+//             text += `${line} `;
+//         }
+//     });
 
-    // Dodaj ostatni element (jeśli istnieje tekst)
-    if (text) {
-        items.push({
-            id: uuidv4(),
-            type: "subtitles",
-            file: null,
-            name: text.trim(),
-            durationInS: endTime - startTime,
-            durationInPx: (endTime - startTime) * 100,
-            startPosition: startTime * 100,
-            startTime,
-            endPosition: endTime * 100,
-        });
-    }
+//     // Dodaj ostatni element (jeśli istnieje tekst)
+//     if (text) {
+//         items.push({
+//             id: uuidv4(),
+//             type: "subtitles",
+//             file: null,
+//             name: text.trim(),
+//             durationInS: endTime - startTime,
+//             durationInPx: (endTime - startTime) * 100,
+//             startPosition: startTime * 100,
+//             startTime,
+//             endPosition: endTime * 100,
+//         });
+//     }
 
-    return items;
-};
+//     return items;
+// };
 
 const convertToSeconds = (time: string) => {
     const [hours, minutes, seconds] = time.split(":");
@@ -87,7 +87,8 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
         timelineTrackContainerWidthPx,
         timelineItems,
         setTimelineItems,
-        subtitles,
+        // subtitles,
+        processedSubtitles,
     } = useEditorContext();
 
     const handleFileProcessing = (file: File) => {
@@ -160,34 +161,56 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
             };
         }
 
-        if (subtitles) {
-            console.group("Parsing subtitles");
-            console.log("Parsing subtitles:", subtitles);
-            const subtitleItems = parseSubtitles(subtitles);
-            console.log("Parsed subtitle items:", subtitleItems);
-            setTimelineItems((prevItems) => {
-                const existingIds = new Set(prevItems.map((item) => item.id));
-                const filteredItems = subtitleItems.filter(
-                    (item) => !existingIds.has(item.id)
-                );
-                return [...prevItems, ...filteredItems];
-            });
-            console.groupEnd();
-        }
+        // if (subtitles) {
+        //     console.group("Parsing subtitles");
+        //     console.log("Parsing subtitles:", subtitles);
+        //     const subtitleItems = parseSubtitles(subtitles);
+        //     console.log("Parsed subtitle items:", subtitleItems);
+        //     setTimelineItems((prevItems) => {
+        //         const existingIds = new Set(prevItems.map((item) => item.id));
+        //         const filteredItems = subtitleItems.filter(
+        //             (item) => !existingIds.has(item.id)
+        //         );
+        //         return [...prevItems, ...filteredItems];
+        //     });
+        //     console.groupEnd();
+        // }
     };
 
+    // useEffect(() => {
+    //     if (subtitles) {
+    //         const subtitleItems = parseSubtitles(subtitles);
+    //         setTimelineItems((prevItems) => {
+    //             const existingIds = new Set(prevItems.map((item) => item.id));
+    //             const filteredItems = subtitleItems.filter(
+    //                 (item) => !existingIds.has(item.id)
+    //             );
+    //             return [...prevItems, ...filteredItems];
+    //         });
+    //     }
+    // }, [subtitles, setTimelineItems]);
+
     useEffect(() => {
-        if (subtitles) {
-            const subtitleItems = parseSubtitles(subtitles);
-            setTimelineItems((prevItems) => {
-                const existingIds = new Set(prevItems.map((item) => item.id));
-                const filteredItems = subtitleItems.filter(
-                    (item) => !existingIds.has(item.id)
-                );
-                return [...prevItems, ...filteredItems];
-            });
-        }
-    }, [subtitles, setTimelineItems]);
+        setTimelineItems(
+            processedSubtitles.map((subtitle) => ({
+                id: subtitle.id,
+                type: "subtitles",
+                name: subtitle.text,
+                file: null, // Dodano file, aby spełnić wymagania interfejsu TrackItem
+                durationInS:
+                    convertToSeconds(subtitle.end) -
+                    convertToSeconds(subtitle.start),
+                durationInPx:
+                    (convertToSeconds(subtitle.end) -
+                        convertToSeconds(subtitle.start)) *
+                    pixelsPerSecond,
+                startPosition:
+                    convertToSeconds(subtitle.start) * pixelsPerSecond,
+                startTime: convertToSeconds(subtitle.start),
+                endPosition: convertToSeconds(subtitle.end) * pixelsPerSecond,
+            }))
+        );
+    }, [processedSubtitles, setTimelineItems, pixelsPerSecond]);
 
     return (
         <div

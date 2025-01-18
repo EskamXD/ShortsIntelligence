@@ -104,13 +104,50 @@ const PreviewPanel: React.FC = () => {
             setHasTriggered("");
         }
 
-        // Obsługa napisów
-        if (subtitleItem) {
-            setCurrentSubtitle(subtitleItem.name);
-        } else {
-            setCurrentSubtitle(null);
-        }
+        // // Obsługa napisów
+        // if (subtitleItem) {
+        //     setCurrentSubtitle(subtitleItem.name);
+        // } else {
+        //     setCurrentSubtitle(null);
+        // }
     }, [localPlaybackPosition, pixelsPerSecond, timelineItems]);
+
+    useEffect(() => {
+        const handleTimeUpdate = () => {
+            if (!videoRef.current) return;
+
+            const playbackPositionPx =
+                videoRef.current.currentTime * pixelsPerSecond;
+
+            // Znajdź napisy pasujące do bieżącej pozycji
+            const subtitleItem = timelineItems.find(
+                (item) =>
+                    item.type === "subtitles" &&
+                    playbackPositionPx >= item.startPosition &&
+                    playbackPositionPx <= item.endPosition
+            );
+
+            if (subtitleItem) {
+                setCurrentSubtitle(subtitleItem.name);
+            } else {
+                setCurrentSubtitle(null);
+            }
+        };
+
+        const videoElement = videoRef.current;
+        if (videoElement) {
+            videoElement.addEventListener("timeupdate", handleTimeUpdate);
+        }
+
+        return () => {
+            if (videoElement) {
+                videoElement.removeEventListener(
+                    "timeupdate",
+                    handleTimeUpdate
+                );
+            }
+        };
+    }, [timelineItems, pixelsPerSecond]);
 
     useEffect(() => {
         localPlaybackPositionRef.current = localPlaybackPosition; // Sync ref with state
@@ -204,6 +241,14 @@ const PreviewPanel: React.FC = () => {
                             textAlign: "center",
                             color: subtitleStyles.color,
                             // backgroundColor: "rgba(0, 0, 0, 0.6)",
+                            textShadow: subtitleStyles.outline
+                                ? `
+                    -${subtitleStyles.outline} -${subtitleStyles.outline} 0 ${subtitleStyles.outlineColor},
+                    ${subtitleStyles.outline} -${subtitleStyles.outline} 0 ${subtitleStyles.outlineColor},
+                    -${subtitleStyles.outline} ${subtitleStyles.outline} 0 ${subtitleStyles.outlineColor},
+                    ${subtitleStyles.outline} ${subtitleStyles.outline} 0 ${subtitleStyles.outlineColor}
+                  `
+                                : "none",
                             padding: "5px",
                             fontSize: subtitleStyles.size,
                             fontFamily: subtitleStyles.font,
