@@ -31,6 +31,7 @@ interface EditorContextType {
     projectID: number;
     quarterQualityVideoURL: string | null;
     subtitles: string;
+    subtitleStyles: SubtitleStyles;
     timelineItems: TrackItem[];
     timelinePanelWidth: number;
     timelineTrackContainerWidthPx: number;
@@ -48,6 +49,7 @@ interface EditorContextType {
     setProjectID: (projectID: number) => void;
     setQuarterQualityVideoURL: (url: string | null) => void;
     setSubtitles: (subtitles: string) => void;
+    setSubtitleStyles: (styles: SubtitleStyles) => void;
     setTimelineItems: React.Dispatch<React.SetStateAction<TrackItem[]>>;
     setTimelinePanelWidth: (width: number) => void;
     setTimeLineTrackContainerWidthPx: (width: number) => void;
@@ -63,7 +65,9 @@ interface EditorProviderProps {
 }
 
 // Kontekst
-const EditorContext = createContext<EditorContextType | undefined>(undefined);
+export const EditorContext = createContext<EditorContextType | undefined>(
+    undefined
+);
 
 export const useEditorContext = () => {
     const context = useContext(EditorContext);
@@ -121,6 +125,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
         projectID,
         quarterQualityVideoURL,
         subtitles,
+        subtitleStyles,
         timelineItems,
         timelinePanelWidth,
         timelineTrackContainerWidthPx,
@@ -136,6 +141,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
         setProjectID,
         setQuarterQualityVideoURL,
         setSubtitles,
+        setSubtitleStyles,
         setTimelineItems,
         setTimelinePanelWidth,
         setTimeLineTrackContainerWidthPx,

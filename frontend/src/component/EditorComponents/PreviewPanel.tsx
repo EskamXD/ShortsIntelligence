@@ -13,6 +13,7 @@ const PreviewPanel: React.FC = () => {
     const [hasTriggered, setHasTriggered] = useState("");
     const [localPlaybackPosition, setLocalPlaybackPosition] = useState(0);
     const videoBlobURLs = useRef(new Map<string, string>());
+    const [currentSubtitle, setCurrentSubtitle] = useState<string | null>(null);
 
     const {
         playbackPosition,
@@ -23,6 +24,7 @@ const PreviewPanel: React.FC = () => {
         setVideoURL,
         timelineItems,
         pixelsPerSecond,
+        subtitleStyles,
     } = useEditorContext();
 
     const getVideoBlobURL = (file: File, itemId: string): string => {
@@ -49,48 +51,53 @@ const PreviewPanel: React.FC = () => {
      */
     useEffect(() => {
         const playbackPositionPx = localPlaybackPosition * pixelsPerSecond;
+
+        // Znajdź bieżące wideo i napisy
         const videoItem = timelineItems.find(
             (item) =>
                 item.type === "video" &&
                 playbackPositionPx >= item.startPosition &&
                 playbackPositionPx <= item.endPosition
         );
-        // console.log("Video item:", videoItem);
 
-        if (videoItem && hasTriggered !== videoItem.id) {
+        const subtitleItem = timelineItems.find(
+            (item) =>
+                item.type === "subtitles" &&
+                playbackPositionPx >= item.startPosition &&
+                playbackPositionPx <= item.endPosition
+        );
+
+        // Obsługa wideo
+        if (videoItem && hasTriggered !== videoItem.id && videoItem.file) {
             const fileURL = getVideoBlobURL(videoItem.file, videoItem.id);
+
             if (videoURL !== fileURL) {
-                // console.log("Setting video URL:", fileURL);
                 setVideoURL(fileURL);
             }
             setHasTriggered(videoItem.id);
 
             if (videoRef.current) {
                 if (videoRef.current.src !== fileURL) {
-                    // console.log("Setting video source:", fileURL);
                     videoRef.current.src = fileURL;
                 }
                 videoRef.current.load();
 
                 const videoCurrentTime =
-                    playbackPosition -
-                    videoItem.startPosition / pixelsPerSecond +
+                    (playbackPositionPx - videoItem.startPosition) /
+                        pixelsPerSecond +
                     videoItem.startTime;
-                // console.log("Setting video currentTime:", videoCurrentTime);
+
                 videoRef.current.currentTime = videoCurrentTime;
 
                 if (isPlaying) {
-                    videoRef.current.play().catch((error) => {
-                        console.error("Error playing video:", error);
-                    });
+                    videoRef.current
+                        .play()
+                        .catch((error) =>
+                            console.error("Error playing video:", error)
+                        );
                 }
             }
         } else if (!videoItem && videoRef.current) {
-            // console.log(
-            //     "Setting video URL to null",
-            //     videoItem,
-            //     videoRef.current
-            // );
             videoRef.current.src = "";
             videoRef.current.currentTime = 0;
             setVideoURL(null);
@@ -213,7 +220,9 @@ const PreviewPanel: React.FC = () => {
 
     return (
         <div className="preview-panel">
-            <div className="preview-panel-video-placeholder">
+            <div
+                className="preview-panel-video-placeholder"
+                style={{ position: "relative" }}>
                 {videoURL !== undefined ? (
                     <video ref={videoRef} className="black-screen">
                         <source src={videoURL || ""} type="video/mp4" />
@@ -250,13 +259,13 @@ const PreviewPanel: React.FC = () => {
             </div>
 
             <div className="custom-controls">
-                <button onClick={togglePlayPause}>
+                <button onClick={togglePlayPause} aria-label="play">
                     {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
                 </button>
-                <button onClick={stopVideo}>
+                <button onClick={stopVideo} aria-label="stop">
                     <StopIcon />
                 </button>
-                <button onClick={switchSound}>
+                <button onClick={switchSound} aria-label="volume">
                     {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
                 </button>
             </div>

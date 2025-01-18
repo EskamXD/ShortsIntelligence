@@ -12,103 +12,12 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
-import GPUtil
+from decouple import config
+from backend.gpu_info import GPUInfo
 
 
-def get_best_codec(vendor):
-    """Zwraca najlepszy dostępny kodek na podstawie producenta GPU"""
-    codecs = {
-        "NVIDIA": "h264_nvenc",
-        "AMD": "h264_amf",
-        "Intel": "h264_qsv",
-        "Unknown": "libx264",  # Domyślny kodek programowy
-    }
-    return codecs.get(vendor, "libx264")
-
-
-def get_best_whisper_model(vram):
-    """Zwraca najlepszy model Whisper na podstawie dostępnego VRAM"""
-    whisper_models = [
-        (10000, "large"),
-        (6000, "turbo"),
-        (5000, "medium"),
-        (2000, "small"),
-        (1000, "base"),
-        (0, "tiny"),
-    ]
-    for min_vram, model in whisper_models:
-        if vram >= min_vram:
-            return model
-    return "tiny"
-
-
-def get_gpu_info():
-    try:
-        gpus = GPUtil.getGPUs()
-        if gpus:
-            gpu = gpus[
-                0
-            ]  # Zakładamy, że jest tylko jeden GPU; można rozszerzyć na wiele
-
-            # Mapa producentów na słowa kluczowe w nazwach GPU
-            vendor_keywords = {
-                "NVIDIA": ["NVIDIA", "RTX", "GTX", "QUADRO"],
-                "AMD": ["AMD", "RADEON"],
-                "Intel": ["INTEL", "HD", "IRIS", "ARC"],
-                "Apple Silicon": [
-                    "APPLE",
-                    "M1",
-                    "M2",
-                    "M1 Pro",
-                    "M1 Max",
-                    "M2 Pro",
-                    "M2 Max",
-                    "M1 Ultra",
-                    "M2 Ultra",
-                ],
-            }
-
-            # Wykrywanie producenta na podstawie słów kluczowych
-            vendor = "Unknown"
-            for key, keywords in vendor_keywords.items():
-                if any(keyword in gpu.name.upper() for keyword in keywords):
-                    vendor = key
-                    break
-
-            # Wybór najlepszego modelu Whisper i kodeka
-            vram = gpu.memoryTotal  # VRAM w MB
-            whisper_model = get_best_whisper_model(vram)
-            codec = get_best_codec(vendor)
-
-            gpu_info = {
-                "name": gpu.name,
-                "memory_total": vram,
-                "vendor": vendor,
-                "whisper_model": whisper_model,
-                "codec": codec,
-            }
-        else:
-            gpu_info = {
-                "name": "No GPU detected",
-                "memory_total": 0,
-                "vendor": "Unknown",
-                "whisper_model": "tiny",
-                "codec": "libx264",
-            }
-    except Exception as e:
-        gpu_info = {
-            "name": "Error detecting GPU",
-            "memory_total": 0,
-            "vendor": "Unknown",
-            "whisper_model": "tiny",
-            "codec": "libx264",
-            "error": str(e),
-        }
-
-    return gpu_info
-
-
-GPU_INFO = get_gpu_info()
+gpu_info = GPUInfo()
+GPU_LIST = gpu_info.get_gpu_info()[0]
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -121,7 +30,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-)bzf(iphqv6d$q+15*6ff!(@+^&+0b2@)m$h6(go-^8r2u5le0"
+# Jeśli chcesz ustawić domyślny klucz w razie braku w .env
+SECRET_KEY = config("SECRET_KEY", default="fallback-secret-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

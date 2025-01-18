@@ -308,6 +308,7 @@ const SubtitlesPanel: React.FC = () => {
                                 }
                             />
                         </Form.Group>
+                        {/* Add other input fields for font, color, size, etc., similar to above */}
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
