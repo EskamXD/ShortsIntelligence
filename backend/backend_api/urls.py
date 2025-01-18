@@ -28,17 +28,17 @@ urlpatterns = [
     path(
         "schema/swagger-ui/",
         SpectacularSwaggerView.as_view(url_name="schema"),
-        name="swagger-ui",
+        name="swagger_ui",
     ),
-    path("get-video-fps/", view=get_video_fps, name="get-video-fps"),
+    path("get-video-fps/", view=get_video_fps, name="get_video_fps"),
     path("process-video/", view=process_video, name="process_video"),
     path("gpu-info/", view=get_gpu_info, name="get_gpu_info"),
-    path("upload-file/", view=upload_file, name="upload-file"),
-    path("list-files/", view=list_files, name="list-files"),
+    path("upload-file/", view=upload_file, name="upload_file"),
+    path("list-files/", view=list_files, name="list_files"),
     path(
         "finalize-project-files/",
         view=finalize_project_files,
-        name="finalize-project-files",
+        name="finalize_project_files",
     ),
-    path("fetch-subtitles/", view=fetch_subtitles, name="fetch-subtitles"),
+    path("fetch-subtitles/", view=fetch_subtitles, name="fetch_subtitles"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

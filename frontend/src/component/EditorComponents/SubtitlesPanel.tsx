@@ -1,4 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { Modal, Button, Form } from "react-bootstrap";
 import { useEditorContext } from "../../context/EditorContext";
 import { fetchSubtitles } from "../../api/apiService";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -342,6 +344,7 @@ const SubtitlesPanel: React.FC = () => {
                             />
                         </Form.Group>
                         {/* Add other input fields for font, color, size, etc., similar to above */}
+
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>

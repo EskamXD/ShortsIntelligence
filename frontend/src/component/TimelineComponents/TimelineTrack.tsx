@@ -4,11 +4,26 @@ import Draggable, { DraggableEvent } from "react-draggable";
 import { formatTime } from "../utils/timeUtils";
 
 interface TimelineTrackProps {
-    trackType: "video" | "audio";
+    trackType: "video" | "audio" | "subtitles";
     pixelsPerSecond: number;
     scrollLeft: number;
     handleFileProcessing: (file: File) => void;
 }
+
+const stylesConfig = {
+    video: {
+        backgroundColor: "darkslateblue",
+        borderColor: "#241e45",
+    },
+    audio: {
+        backgroundColor: "darkgreen",
+        borderColor: "#084808",
+    },
+    subtitles: {
+        backgroundColor: "darkorange", // Możesz ustawić dowolny kolor
+        borderColor: "#8b4500", // Możesz ustawić dowolny kolor
+    },
+};
 
 const TimelineTrack: React.FC<TimelineTrackProps> = ({
     trackType,
@@ -184,14 +199,12 @@ const TimelineTrack: React.FC<TimelineTrackProps> = ({
                                 className="media-item"
                                 style={{
                                     backgroundColor:
-                                        trackType === "video"
-                                            ? "darkslateblue"
-                                            : "darkgreen",
+                                        stylesConfig[trackType]
+                                            ?.backgroundColor || "gray", // Domyślny kolor, jeśli trackType nie pasuje
                                     width: `${item.durationInPx}px`,
                                     borderColor:
-                                        trackType === "video"
-                                            ? "#241e45"
-                                            : "#084808",
+                                        stylesConfig[trackType]?.borderColor ||
+                                        "black", // Domyślny kolor ramki
                                     opacity:
                                         isDragging && draggedItemId === item.id
                                             ? 0.5

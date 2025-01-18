@@ -191,3 +191,13 @@ export const fetchSubtitles = async (projectID: number) => {
         return null;
     }
 };
+
+export const getGPUInfo = async () => {
+    try {
+        const response = await apiClient.get("gpu-info/");
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching GPU info:", error);
+        return null;
+    }
+};

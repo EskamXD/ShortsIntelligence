@@ -130,8 +130,9 @@ def process_video(request):
         print("\n\n\n", video_path, output_video_path, subtitles_path, "\n\n\n")
 
         # Wybór kodeka i modelu Whisper z ustawień
-        codec = settings.GPU_INFO["codec"]
-        whisper_model = settings.GPU_INFO["whisper_model"]
+        codec = settings.GPU_LIST["codec"]
+        whisper_model = settings.GPU_LIST["whisper_model"]
+        print("\n\n\n", codec, whisper_model, "\n\n\n")
 
         # Uzyskaj proporcje wideo za pomocą FFprobe
         try:
@@ -381,19 +382,40 @@ def process_video(request):
 
 @api_view(["GET"])
 def get_gpu_info(request):
-    gpu_info = settings.GPU_INFO
+    gpu_info = settings.GPU_LIST
     return Response(gpu_info)
 
 
 @api_view(["POST"])
 def upload_file(request):
-    file = request.FILES.get("file")
-    project_id = request.POST.get("project_id")
-    if file:
-        # Save file to default_storage
-        file_path = default_storage.save(f"edit_files_{project_id}/{file.name}", file)
-        return JsonResponse({"file_url": default_storage.url(file_path)}, status=201)
-    return JsonResponse({"error": "No file uploaded"}, status=400)
+    try:
+        file = request.FILES.get("file")
+        project_id = request.POST.get("project_id")
+        if not file:
+            return JsonResponse({"error": "No file uploaded"}, status=400)
+
+        # Sprawdź, czy project_id jest poprawne
+        if not project_id:
+            return JsonResponse({"error": "Project ID is required"}, status=400)
+
+        try:
+            # Save file to default_storage
+            file_path = default_storage.save(
+                f"edit_files_{project_id}/{file.name}", file
+            )
+            return JsonResponse(
+                {"file_url": default_storage.url(file_path)}, status=201
+            )
+        except Exception as storage_error:
+            return JsonResponse(
+                {"error": f"Failed to save file: {str(storage_error)}"},
+                status=500,
+            )
+    except Exception as e:
+        return JsonResponse(
+            {"error": f"An unexpected error occurred: {str(e)}"},
+            status=500,
+        )
 
 
 @api_view(["GET"])
@@ -452,7 +474,7 @@ def finalize_project_files(request):
 
         # Return paths for the saved files
         video_url = default_storage.url(
-            f"edit_files_{project_id}/{video_name if video_name else "processed_video"}.mp4"
+            f"edit_files_{project_id}/{video_name if video_name else 'processed_video'}.mp4"
         )
         subtitles_url = (
             default_storage.url(f"edit_files_{project_id}/subtitles.srt")

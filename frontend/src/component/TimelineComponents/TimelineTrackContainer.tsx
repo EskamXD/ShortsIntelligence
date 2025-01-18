@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import TimelineTrack from "../TimelineComponents/TimelineTrack";
 import { useEditorContext } from "../../context/EditorContext";
 import { v4 as uuidv4 } from "uuid";
@@ -218,6 +218,13 @@ const TimelineTrackContainer: React.FC<TimelineTrackContainerProps> = ({
             className="d-flex flex-column"
             style={{ width: `${timelineTrackContainerWidthPx}px` }}
             onClick={handleMouseDown}>
+            <TimelineTrack
+                trackType="subtitles"
+                pixelsPerSecond={pixelsPerSecond}
+                scrollLeft={scrollLeft}
+                handleFileProcessing={() => {}} // Napisy są już obsługiwane
+            />
+
             <TimelineTrack
                 trackType="video"
                 pixelsPerSecond={pixelsPerSecond}

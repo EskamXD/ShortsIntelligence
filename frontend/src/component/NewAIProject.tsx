@@ -22,6 +22,7 @@ import {
     processVideo,
     postProject,
     finalizeResponse,
+    getGPUInfo,
 } from "../api/apiService";
 import { formatTime } from "./utils/timeUtils";
 import { useEditorContext } from "../context/EditorContext";
@@ -59,6 +60,7 @@ const NewAIProject: React.FC = () => {
         subtitles_url?: string;
     } | null>(null);
     const [done, setDone] = useState(false);
+    const [GPUInfo, setGPUInfo] = useState<any | null>(null);
 
     const { projectID, setProjectID } = useEditorContext();
 
@@ -179,6 +181,13 @@ const NewAIProject: React.FC = () => {
     };
 
     const handleProcessVideo = async () => {
+        try {
+            const response = await getGPUInfo();
+            setGPUInfo(response);
+        } catch (error) {
+            console.error("Error fetching GPU info:", error);
+        }
+
         setLoading(true);
         try {
             // Step 1: Process the video and get URLs
@@ -414,7 +423,9 @@ const NewAIProject: React.FC = () => {
             {step === 4 && (
                 <div>
                     <h3>4. Additional Options</h3>
-                    <Form.Group className="mb-3">
+                    <Form.Group
+                        className="mb-3"
+                        style={{ width: "fit-content", margin: "0 auto" }}>
                         <Form.Check
                             type="checkbox"
                             label="Enhance Audio Quality"
@@ -491,6 +502,19 @@ const NewAIProject: React.FC = () => {
                                     )}
                                 </Button>
                             </>
+                        )}
+                        {GPUInfo && (
+                            <div className="mt-3">
+                                <h5>GPU Info</h5>
+                                <p>
+                                    Name: {GPUInfo.name} | VRAM: {GPUInfo.vram}
+                                </p>
+
+                                <p>
+                                    Codec: {GPUInfo.codec} | Whisper model:{" "}
+                                    {GPUInfo.whisper_model}
+                                </p>
+                            </div>
                         )}
                     </div>
 
