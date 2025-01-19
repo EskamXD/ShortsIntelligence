@@ -8,12 +8,14 @@ import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 
 const PreviewPanel: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const backgroundVideoRef = useRef<HTMLVideoElement>(null);
     const localPlaybackPositionRef = useRef(0); // Ref for latest playback position
     const [isMuted, setIsMuted] = useState(false);
     const [hasTriggered, setHasTriggered] = useState("");
     const [localPlaybackPosition, setLocalPlaybackPosition] = useState(0);
     const videoBlobURLs = useRef(new Map<string, string>());
     const [currentSubtitle, setCurrentSubtitle] = useState<string | null>(null);
+    const [videoWidth, setVideoWidth] = useState<number>(0);
 
     const {
         playbackPosition,
@@ -40,8 +42,9 @@ const PreviewPanel: React.FC = () => {
      * Sync `localPlaybackPosition` with `playbackPosition` changes.
      */
     useEffect(() => {
-        if (videoRef.current) {
+        if (videoRef.current && backgroundVideoRef.current) {
             videoRef.current.pause();
+            backgroundVideoRef.current.pause();
             setLocalPlaybackPosition(playbackPosition);
         }
     }, [playbackPosition]);
@@ -76,11 +79,16 @@ const PreviewPanel: React.FC = () => {
             }
             setHasTriggered(videoItem.id);
 
-            if (videoRef.current) {
-                if (videoRef.current.src !== fileURL) {
+            if (videoRef.current && backgroundVideoRef.current) {
+                if (
+                    videoRef.current.src !== fileURL ||
+                    backgroundVideoRef.current.src !== fileURL
+                ) {
                     videoRef.current.src = fileURL;
+                    backgroundVideoRef.current.src = fileURL;
                 }
                 videoRef.current.load();
+                backgroundVideoRef.current.load();
 
                 const videoCurrentTime =
                     (playbackPositionPx - videoItem.startPosition) /
@@ -88,6 +96,7 @@ const PreviewPanel: React.FC = () => {
                     videoItem.startTime;
 
                 videoRef.current.currentTime = videoCurrentTime;
+                backgroundVideoRef.current.currentTime = videoCurrentTime;
 
                 if (isPlaying) {
                     videoRef.current
@@ -95,11 +104,22 @@ const PreviewPanel: React.FC = () => {
                         .catch((error) =>
                             console.error("Error playing video:", error)
                         );
+                    backgroundVideoRef.current
+                        .play()
+                        .catch((error) =>
+                            console.error("Error playing video:", error)
+                        );
                 }
             }
-        } else if (!videoItem && videoRef.current) {
+        } else if (
+            !videoItem &&
+            videoRef.current &&
+            backgroundVideoRef.current
+        ) {
             videoRef.current.src = "";
             videoRef.current.currentTime = 0;
+            backgroundVideoRef.current.src = "";
+            backgroundVideoRef.current.currentTime = 0;
             setVideoURL(null);
             setHasTriggered("");
         }
@@ -114,7 +134,7 @@ const PreviewPanel: React.FC = () => {
 
     useEffect(() => {
         const handleTimeUpdate = () => {
-            if (!videoRef.current) return;
+            if (!videoRef.current || !backgroundVideoRef.current) return;
 
             const playbackPositionPx =
                 videoRef.current.currentTime * pixelsPerSecond;
@@ -195,7 +215,10 @@ const PreviewPanel: React.FC = () => {
     const togglePlayPause = () => {
         if (isPlaying) {
             setIsPlaying(false);
-            if (videoRef.current && videoURL) videoRef.current.pause();
+            if (videoRef.current && backgroundVideoRef.current && videoURL) {
+                videoRef.current.pause();
+                backgroundVideoRef.current.pause();
+            }
             setHasTriggered("");
         } else {
             setIsPlaying(true);
@@ -203,8 +226,11 @@ const PreviewPanel: React.FC = () => {
     };
 
     const stopVideo = () => {
-        if (videoRef.current) {
+        if (videoRef.current && backgroundVideoRef.current) {
             videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+            backgroundVideoRef.current.pause();
+            backgroundVideoRef.current.currentTime = 0;
         }
         setPlaybackPosition(0);
         setLocalPlaybackPosition(0);
@@ -212,32 +238,79 @@ const PreviewPanel: React.FC = () => {
     };
 
     const switchSound = () => {
-        if (videoRef.current) {
+        if (videoRef.current && backgroundVideoRef.current) {
             videoRef.current.muted = !videoRef.current.muted;
+            backgroundVideoRef.current.muted =
+                !backgroundVideoRef.current.muted;
             setIsMuted(videoRef.current.muted);
         }
     };
+
+    useEffect(() => {
+        const updateVideoWidth = () => {
+            if (videoRef.current) {
+                const boundingRect = videoRef.current.getBoundingClientRect();
+                setVideoWidth(boundingRect.width); // Ustaw szerokość wideo
+            }
+        };
+
+        // Wywołaj raz na początek i dodaj listener na resize
+        updateVideoWidth();
+        window.addEventListener("resize", updateVideoWidth);
+
+        return () => {
+            window.removeEventListener("resize", updateVideoWidth);
+        };
+    }, []);
 
     return (
         <div className="preview-panel">
             <div
                 className="preview-panel-video-placeholder"
-                style={{ position: "relative" }}>
+                style={{
+                    position: "relative",
+                    overflow: "hidden",
+                    aspectRatio: "9/16",
+                }}>
+                {videoURL && (
+                    <video
+                        ref={backgroundVideoRef}
+                        className="background-video"
+                        style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            // width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            filter: "blur(20px) brightness(0.5)",
+                            zIndex: 0,
+                            pointerEvents: "none", // Ignorowanie kliknięć
+                        }}
+                        muted>
+                        <source src={videoURL} type="video/mp4" />
+                    </video>
+                )}
                 {videoURL !== undefined ? (
-                    <video ref={videoRef} className="black-screen">
+                    <video
+                        ref={videoRef}
+                        className="black-screen"
+                        style={{
+                            zIndex: 1,
+                        }}>
                         <source src={videoURL || ""} type="video/mp4" />
                     </video>
                 ) : (
                     <div
                         className="black-screen"
-                        style={{ backgroundColor: "red" }}></div>
+                        style={{ backgroundColor: "red", zIndex: 1 }}></div>
                 )}
                 {currentSubtitle && (
                     <div
                         style={{
                             position: "absolute",
                             bottom: "10px",
-                            width: "100%",
+                            width: `${videoWidth}px`,
                             textAlign: "center",
                             color: subtitleStyles.color,
                             // backgroundColor: "rgba(0, 0, 0, 0.6)",
@@ -252,6 +325,7 @@ const PreviewPanel: React.FC = () => {
                             padding: "5px",
                             fontSize: subtitleStyles.size,
                             fontFamily: subtitleStyles.font,
+                            zIndex: 1,
                         }}>
                         {currentSubtitle}
                     </div>

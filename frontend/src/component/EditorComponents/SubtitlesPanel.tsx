@@ -19,38 +19,46 @@ const splitTextIntoChunksWithTime = (
 ): SubtitleChunk[] => {
     const words = text.split(" ");
     const totalDuration = endTime - startTime;
+
+    // Funkcja pomocnicza do obliczania wagi słowa (długość w znakach)
+    const calculateWordWeight = (word: string) => word.length;
+
+    // Obliczenie całkowitej wagi wszystkich słów
+    const totalWeight = words.reduce(
+        (sum, word) => sum + calculateWordWeight(word),
+        0
+    );
+
     const chunks: SubtitleChunk[] = [];
     let currentChunk: string[] = [];
+    let chunkWeight = 0;
     let chunkStartTime = startTime;
 
     words.forEach((word, index) => {
-        if (currentChunk.join(" ").length + word.length + 1 <= maxLength) {
-            currentChunk.push(word);
-        } else {
-            if (currentChunk.length > 0) {
-                const chunkDuration =
-                    (totalDuration / words.length) * currentChunk.length;
+        const wordWeight = calculateWordWeight(word);
 
-                chunks.push({
-                    text: currentChunk.join(" "),
-                    start: chunkStartTime,
-                    end: chunkStartTime + chunkDuration,
-                });
+        // Dodanie słowa do bieżącego chunku
+        currentChunk.push(word);
+        chunkWeight += wordWeight;
 
-                chunkStartTime += chunkDuration;
-                currentChunk = [word];
-            }
-        }
-
-        if (index === words.length - 1 && currentChunk.length > 0) {
-            const chunkDuration =
-                (totalDuration / words.length) * currentChunk.length;
+        // Jeśli dodanie słowa przekroczy maksymalną długość lub występuje kropka/przecinek
+        if (
+            currentChunk.join(" ").length > maxLength ||
+            /[.,!?]/.test(word[word.length - 1]) ||
+            index === words.length - 1
+        ) {
+            // Oblicz czas chunku na podstawie jego wagi
+            const chunkDuration = (totalDuration * chunkWeight) / totalWeight;
 
             chunks.push({
-                text: currentChunk.join(" "),
+                text: currentChunk.join(" ").trim(),
                 start: chunkStartTime,
                 end: chunkStartTime + chunkDuration,
             });
+
+            chunkStartTime += chunkDuration;
+            currentChunk = [];
+            chunkWeight = 0;
         }
     });
 
@@ -100,7 +108,6 @@ const parseSRT = (subtitles: string): Subtitle[] => {
 
                 if (lines.length < 2) return null;
 
-                // Pobierz czasy
                 const times = lines[0];
                 const [start, end] = times.split(" --> ");
                 if (!start || !end) return null;
@@ -113,19 +120,16 @@ const parseSRT = (subtitles: string): Subtitle[] => {
                 // Podziel tekst na chunki
                 const textChunks = splitTextIntoChunksWithTime(
                     fullText,
-                    25, // Maksymalna długość chunka
+                    25, // Maksymalna długość chunku
                     startSeconds,
                     endSeconds
                 );
 
-                console.log("Chunks in ParseSRT:", textChunks);
-
-                // Mapuj każdy chunk na obiekt Subtitle
                 return textChunks.map((chunk) => ({
                     id: uuidv4(),
-                    start: convertToTimecode(chunk.start), // Czas chunku
-                    end: convertToTimecode(chunk.end), // Czas chunku
-                    text: chunk.text,
+                    start: convertToTimecode(chunk.start),
+                    end: convertToTimecode(chunk.end),
+                    text: chunk.text.trim(), // Usuń zbędne spacje
                     font: "Arial",
                     color: "#ffffff",
                     size: "32px",
@@ -185,6 +189,9 @@ const SubtitlesPanel: React.FC = () => {
                         "Loaded subtitles after parseSRT",
                         parsedSubtitles
                     );
+                    parsedSubtitles.forEach((item) => {
+                        console.log("Subtitles text after parseSRT", item.text);
+                    });
                     setSubtitleList(parsedSubtitles);
                     setProcessedSubtitles(parsedSubtitles);
                 }
@@ -236,6 +243,9 @@ const SubtitlesPanel: React.FC = () => {
             const response = await fetchSubtitles(projectID);
             const parsedSubtitles = parseSRT(response);
             console.log("New generated subtitles", parsedSubtitles);
+            parsedSubtitles.forEach((item) => {
+                console.log("Subtitles text new generated", item.text);
+            });
             setSubtitleList(parsedSubtitles);
             setProcessedSubtitles(parsedSubtitles);
         } catch (error) {
@@ -391,4 +401,3 @@ const SubtitlesPanel: React.FC = () => {
 };
 
 export default SubtitlesPanel;
-
