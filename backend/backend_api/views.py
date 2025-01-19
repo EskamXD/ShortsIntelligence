@@ -237,149 +237,6 @@ def process_video(request):
     return JsonResponse({"error": "Invalid request"}, status=400)
 
 
-# @api_view(["POST"])
-# @csrf_exempt
-# def process_video(request):
-#     if request.method == "POST" and "video" in request.FILES:
-#         video_file = request.FILES["video"]
-#         start_time = request.POST["start_time"]
-#         end_time = request.POST["end_time"]
-#         resolution = request.POST["resolution"]
-#         enhance_audio = request.POST["enhance_audio"] == "true"
-#         add_subtitles = request.POST["add_subtitles"] == "true"
-
-#         # Mapowanie rozdzielczości do wartości pionowych
-#         resolution_mapping = {
-#             "480p": 480,
-#             "720p": 720,
-#             "1080p": 1080,
-#             "1440p": 1440,
-#             "4K": 2160,
-#         }
-#         target_resolution = resolution_mapping.get(resolution, 1080)
-
-#         output_video_name = "processed_video.mp4"
-#         subtitles_name = "subtitles.srt"
-#         codec = settings.GPU_INFO["codec"]
-#         whisper_model = settings.GPU_INFO["whisper_model"]
-
-#         def generate():
-#             # Informacja o rozpoczęciu przetwarzania
-#             yield "data: Rozpoczęcie przetwarzania wideo\n\n"
-
-#             # Zapisz oryginalne wideo
-#             video_path = default_storage.save(
-#                 os.path.join("temp", video_file.name), video_file
-#             )
-#             output_video_path = default_storage.path(output_video_name)
-#             subtitles_path = default_storage.path(subtitles_name)
-
-#             # Sprawdz proporcje wideo
-#             yield "data: Sprawdzanie rozmiaru wideo\n\n"
-#             try:
-#                 probe = subprocess.run(
-#                     [
-#                         "ffprobe",
-#                         "-v",
-#                         "error",
-#                         "-select_streams",
-#                         "v:0",
-#                         "-show_entries",
-#                         "stream=width,height",
-#                         "-of",
-#                         "csv=p=0",
-#                         default_storage.path(video_path),
-#                     ],
-#                     capture_output=True,
-#                     text=True,
-#                     check=True,
-#                 )
-#                 width, height = map(int, probe.stdout.strip().split(","))
-#                 scale_value = (
-#                     f"-1:{target_resolution}"
-#                     if height > width
-#                     else f"{target_resolution}:-1"
-#                 )
-
-#                 # Montowanie wideo
-#                 yield "data: Montowanie wideo\n\n"
-#                 if default_storage.exists(output_video_name):
-#                     default_storage.delete(output_video_name)
-
-#                 ffmpeg_cmd = [
-#                     "ffmpeg",
-#                     "-i",
-#                     default_storage.path(video_path),
-#                     "-vf",
-#                     f"scale={scale_value}",
-#                     "-ss",
-#                     start_time,
-#                     "-to",
-#                     end_time,
-#                     "-c:v",
-#                     codec,
-#                     "-preset",
-#                     "fast",
-#                     "-c:a",
-#                     "aac",
-#                     output_video_path,
-#                 ]
-
-#                 if codec == "libx264":
-#                     ffmpeg_cmd.extend(["-crf", "18"])
-#                 elif codec == "h264_nvenc":
-#                     ffmpeg_cmd.extend(["-cq:v", "20"])  # jakość dla kodeka NVIDIA
-
-#                 if enhance_audio:
-#                     ffmpeg_cmd.extend(["-af", "highpass=f=200, lowpass=f=3000"])
-
-#                 subprocess.run(ffmpeg_cmd, check=True)
-
-#                 # Generowanie napisów
-#                 if add_subtitles:
-#                     yield "data: Generowanie napisów\n\n"
-#                     model = load_model(whisper_model)
-#                     result = model.transcribe(output_video_path, fp16=False)
-
-#                     # Tworzenie pliku SRT z timestampami
-#                     srt_content = ""
-#                     for i, segment in enumerate(result["segments"], start=1):
-#                         start = format_timestamp(segment["start"])
-#                         end = format_timestamp(segment["end"])
-#                         text = segment["text"].strip()
-#                         srt_content += f"{i}\n{start} --> {end}\n{text}\n\n"
-
-#                     subtitles_content = ContentFile(srt_content.encode("utf-8"))
-#                     default_storage.save(subtitles_name, subtitles_content)
-
-#                 yield "data: Przetwarzanie zakończone\n\n"
-
-#                 # Zwrócenie URL-i po zakończeniu
-#                 video_url = request.build_absolute_uri(
-#                     default_storage.url(output_video_name)
-#                 )
-#                 subtitles_url = (
-#                     request.build_absolute_uri(default_storage.url(subtitles_name))
-#                     if add_subtitles
-#                     else None
-#                 )
-#                 yield f"data: {{'video_url': '{video_url}', 'subtitles_url': '{subtitles_url}'}}\n\n"
-
-#             except subprocess.CalledProcessError as e:
-#                 yield f"data: Error processing video: {str(e)}\n\n"
-#             finally:
-#                 # Usuń pliki tymczasowe
-#                 default_storage.delete(video_path)
-
-#         # Zwracanie `StreamingHttpResponse` z generatora `generate`
-#         response = StreamingHttpResponse(generate(), content_type="text/event-stream")
-#         response["Cache-Control"] = "no-cache"
-#         response["X-Accel-Buffering"] = "no"
-#         return response
-
-#     return JsonResponse({"error": "Invalid request"}, status=400)
-
-
 @api_view(["GET"])
 def get_gpu_info(request):
     gpu_info = settings.GPU_LIST
@@ -507,3 +364,74 @@ def fetch_subtitles(request):
 
     # Return an error if the subtitle file doesn't exist
     return JsonResponse({"error": "Subtitle file not found."}, status=404)
+
+
+@api_view(["GET"])
+def extract_captions(request):
+    try:
+        # Get project_id from query parameters
+        project_id = request.GET.get("project_id")
+        if not project_id:
+            return JsonResponse({"error": "project_id is required"}, status=400)
+
+        # Define the folder path in default storage
+        folder_path = f"edit_files_{project_id}/"
+
+        # List files in the folder
+        if not default_storage.exists(folder_path):
+            return JsonResponse({"error": "Folder not found"}, status=404)
+
+        default_storage.delete(f"{folder_path}/subtitles.srt")
+
+        # List the contents of the folder
+        folder_contents = default_storage.listdir(folder_path)
+        print(f"Contents of folder '{folder_path}': {folder_contents}")
+
+        files = folder_contents[1]  # Get list of files (second item in tuple)
+        print(files)
+
+        # Filter for the first file that is not .mp4 or .mp3
+        file_to_transcribe = next(
+            (file for file in files if file.endswith((".mp4", ".mp3"))), None
+        )
+
+        print(file_to_transcribe)
+        if not file_to_transcribe:
+            return JsonResponse(
+                {"error": "No suitable file found for transcription"}, status=404
+            )
+
+        # Get the full path to the file
+        file_path = os.path.join(folder_path, file_to_transcribe)
+
+        # Check if the file exists
+        if not default_storage.exists(file_path):
+            return JsonResponse({"error": "File not found"}, status=404)
+
+        # Download the file locally for processing
+        local_file_path = default_storage.path(file_path)
+
+        # Process the file using Whisper (assuming `model` is defined and properly initialized)
+        whisper_model = settings.GPU_LIST["whisper_model"]
+        model = load_model(whisper_model)
+        result = model.transcribe(local_file_path)
+        # Tworzenie pliku SRT z timestampami
+        srt_content = ""
+        for i, segment in enumerate(result["segments"], start=1):
+            start = format_timestamp(segment["start"])
+            end = format_timestamp(segment["end"])
+            text = segment["text"].strip()
+            srt_content += f"{i}\n{start} --> {end}\n{text}\n\n"
+
+        # Zapisz napisy w `default_storage` jako plik .srt
+        subtitles_content = ContentFile(srt_content.encode("utf-8"))
+        saved_subtitles_file = default_storage.save(
+            f"{folder_path}/subtitles.srt", subtitles_content
+        )
+
+        # Return the response with the path to the subtitles file
+        return JsonResponse(
+            {"project_id": project_id, "subtitles_path": saved_subtitles_file}
+        )
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

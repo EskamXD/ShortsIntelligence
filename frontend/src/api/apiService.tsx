@@ -201,3 +201,16 @@ export const getGPUInfo = async () => {
         return null;
     }
 };
+
+export const generateSubtitles = async (projectID: number) => {
+    try {
+        const response = await apiClient.get("extract-captions/", {
+            params: { project_id: projectID },
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching new subtitles:", error);
+        return null;
+    }
+};
+

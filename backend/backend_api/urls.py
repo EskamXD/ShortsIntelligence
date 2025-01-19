@@ -12,6 +12,7 @@ from .views import (
     list_files,
     finalize_project_files,
     fetch_subtitles,
+    extract_captions,
 )
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
@@ -41,4 +42,9 @@ urlpatterns = [
         name="finalize_project_files",
     ),
     path("fetch-subtitles/", view=fetch_subtitles, name="fetch_subtitles"),
+    path(
+        "extract-captions/",
+        view=extract_captions,
+        name="extract_captions",
+    ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

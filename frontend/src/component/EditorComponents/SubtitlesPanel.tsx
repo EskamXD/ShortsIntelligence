@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, Spinner } from "react-bootstrap";
 import { useEditorContext } from "../../context/EditorContext";
-import { fetchSubtitles } from "../../api/apiService";
+import { fetchSubtitles, generateSubtitles } from "../../api/apiService";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 interface SubtitleChunk {
@@ -68,6 +68,22 @@ const convertToSeconds = (time: string): number => {
     );
 };
 
+const convertToTimecode = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600)
+        .toString()
+        .padStart(2, "0");
+    const minutes = Math.floor((seconds % 3600) / 60)
+        .toString()
+        .padStart(2, "0");
+    const secs = Math.floor(seconds % 60)
+        .toString()
+        .padStart(2, "0");
+    const millis = Math.round((seconds % 1) * 1000)
+        .toString()
+        .padStart(3, "0");
+    return `${hours}:${minutes}:${secs},${millis}`;
+};
+
 const parseSRT = (subtitles: string): Subtitle[] => {
     if (!subtitles) return [];
     const entries = subtitles.trim().split("\n\n");
@@ -77,12 +93,14 @@ const parseSRT = (subtitles: string): Subtitle[] => {
             try {
                 let lines = entry.split("\n");
 
+                // Usuń numer linijki i puste linie
                 lines = lines.filter(
                     (line) => !/^\d+$/.test(line.trim()) && line.trim() !== ""
                 );
 
                 if (lines.length < 2) return null;
 
+                // Pobierz czasy
                 const times = lines[0];
                 const [start, end] = times.split(" --> ");
                 if (!start || !end) return null;
@@ -92,17 +110,21 @@ const parseSRT = (subtitles: string): Subtitle[] => {
                 const textLines = lines.slice(1);
                 const fullText = textLines.join(" ").trim();
 
+                // Podziel tekst na chunki
                 const textChunks = splitTextIntoChunksWithTime(
                     fullText,
-                    25,
+                    25, // Maksymalna długość chunka
                     startSeconds,
                     endSeconds
                 );
 
+                console.log("Chunks in ParseSRT:", textChunks);
+
+                // Mapuj każdy chunk na obiekt Subtitle
                 return textChunks.map((chunk) => ({
                     id: uuidv4(),
-                    start: start.trim(),
-                    end: end.trim(),
+                    start: convertToTimecode(chunk.start), // Czas chunku
+                    end: convertToTimecode(chunk.end), // Czas chunku
                     text: chunk.text,
                     font: "Arial",
                     color: "#ffffff",
@@ -151,6 +173,7 @@ const SubtitlesPanel: React.FC = () => {
         outline: "2px",
         outlineColor: "#000000",
     });
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const loadSubtitlesFromProject = async () => {
@@ -158,6 +181,10 @@ const SubtitlesPanel: React.FC = () => {
                 const response = await fetchSubtitles(projectID);
                 if (response) {
                     const parsedSubtitles = parseSRT(response);
+                    console.log(
+                        "Loaded subtitles after parseSRT",
+                        parsedSubtitles
+                    );
                     setSubtitleList(parsedSubtitles);
                     setProcessedSubtitles(parsedSubtitles);
                 }
@@ -202,6 +229,23 @@ const SubtitlesPanel: React.FC = () => {
         setProcessedSubtitles(updatedList);
     };
 
+    const handleGenerateSubtitles = async () => {
+        setLoading(true); // Ustawienie stanu ładowania
+        try {
+            await generateSubtitles(projectID); // Wywołanie API do generowania napisów
+            const response = await fetchSubtitles(projectID);
+            const parsedSubtitles = parseSRT(response);
+            console.log("New generated subtitles", parsedSubtitles);
+            setSubtitleList(parsedSubtitles);
+            setProcessedSubtitles(parsedSubtitles);
+        } catch (error) {
+            console.error("Failed to generate subtitles:", error);
+            alert("Failed to generate subtitles. Please try again.");
+        } finally {
+            setLoading(false); // Wyłączenie stanu ładowania
+        }
+    };
+
     return (
         <div className="subtitles-panel">
             <Button
@@ -211,6 +255,26 @@ const SubtitlesPanel: React.FC = () => {
                 }}
                 style={{ marginBottom: "10px" }}>
                 + Add New Subtitle
+            </Button>
+            <Button
+                variant="success"
+                onClick={handleGenerateSubtitles}
+                disabled={loading} // Wyłączony przycisk w trakcie ładowania
+                style={{ marginBottom: "10px" }}>
+                {loading ? (
+                    <>
+                        <Spinner
+                            as="span"
+                            animation="border"
+                            size="sm"
+                            role="status"
+                            aria-hidden="true"
+                        />{" "}
+                        Generating...
+                    </>
+                ) : (
+                    "Generate Subtitles"
+                )}
             </Button>
 
             <div style={{ overflowY: "auto", height: "90%" }}>
@@ -327,3 +391,4 @@ const SubtitlesPanel: React.FC = () => {
 };
 
 export default SubtitlesPanel;
+

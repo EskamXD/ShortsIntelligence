@@ -1,6 +1,7 @@
 import platform
 import subprocess
 import json
+import psutil
 
 
 class GPUInfo:
@@ -121,24 +122,18 @@ class GPUInfo:
 
     def _get_vram_apple(self):
         """
-        Używa system_profiler do sprawdzenia ilości VRAM dla kart Apple.
+        Przypisuje połowę pamięci RAM dostępnej w laptopie.
         """
         try:
-            sp_output = subprocess.check_output(
-                ["system_profiler", "SPDisplaysDataType"], text=True
-            )
-            vram = 0
-            for line in sp_output.split("\n"):
-                print(line)
-                if "VRAM (Total):" in line:
-                    vram = int(line.split(":")[-1].strip().replace(" MB", ""))
-                    break
-            return vram
-        except FileNotFoundError:
-            print("system_profiler not found. Ensure you are on macOS.")
-            return 0
+            # Pobierz całkowitą ilość RAM w bajtach
+            total_ram_bytes = psutil.virtual_memory().total
+
+            # Przelicz na megabajty i podziel na pół
+            half_ram_mb = total_ram_bytes // (1024 * 1024 * 2)
+
+            return half_ram_mb
         except Exception as e:
-            print(f"Error using system_profiler: {e}")
+            print(f"Error retrieving system memory: {e}")
             return 0
 
     def get_gpu_info(self):
@@ -166,7 +161,7 @@ class GPUInfo:
             if "vram" in gpu:
                 gpu["whisper_model"] = self.get_best_whisper_model(gpu["vram"])
 
-        print(gpu_list)
+        # print(gpu_list)
         return gpu_list
 
     def _get_windows_gpu_info(self):
